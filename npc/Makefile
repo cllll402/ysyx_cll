@@ -1,22 +1,48 @@
-# Makefile for simulation
+TOPNAME = top
+NXDC_FILES = constr/top.nxdc
+INC_PATH ?=
 
-CSRC_DIR=/home/cll/ysyx-workbench/npc/csrc
-VSRC_DIR=/home/cll/ysyx-workbench/npc/vsrc
+VERILATOR = verilator
+VERILATOR_CFLAGS += -MMD --build -cc -O3 --x-assign fast --x-initial fast --noassert
 
-CPP_FILE=sim_test.cpp
-VERILOG_FILE=test.v
+BUILD_DIR = ./build
+OBJ_DIR = $(BUILD_DIR)/obj_dir
+BIN = $(BUILD_DIR)/$(TOPNAME)
 
-VERILATOR=verilator
+$(shell mkdir -p $(BUILD_DIR))
 
-TARGET=sim_test
+# constraint file
+SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
+$(SRC_AUTO_BIND): $(NXDC_FILES)
+	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
-sim: 
-	$(VERILATOR) -Wall --cc --exe --build $(CSRC_DIR)/$(CPP_FILE) $(VSRC_DIR)/$(VERILOG_FILE) -o $(TARGET)
+# project source
+VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+CSRCS += $(SRC_AUTO_BIND)
 
-clean:	
-	rm -rf obj_dir $(TARGET) $(TARGET).d $(TARGET).mk $(TARGET).cpp
+# rules for NVBoard
+include $(NVBOARD_HOME)/scripts/nvboard.mk
 
-all: sim
-.PHONY: all sim clean
+# rules for verilator
+INCFLAGS = $(addprefix -I, $(INC_PATH))
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 
-#$(call git_commit, "sim RTL")
+$(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
+	@rm -rf $(OBJ_DIR)
+	$(VERILATOR) $(VERILATOR_CFLAGS) \
+		--top-module $(TOPNAME) $^ \
+		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
+		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
+
+default: $(BIN)
+
+run: $(BIN)
+	@$^
+
+all: $(BIN)
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+.PHONY: default run all clean
