@@ -53,6 +53,7 @@ void init_mem() {
 word_t paddr_read(paddr_t addr, int len) {
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+  //两种情况，一种是物理内存，另一种是设备寄存器
   out_of_bound(addr);
   return 0;
 }

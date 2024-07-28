@@ -18,56 +18,52 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include "reg.h"
 
-static int is_batch_mode = false;
+#define NR_CMD ARRLEN(cmd_table)
+
+typedef uint32_t vaddr_t;
+typedef uint32_t word_t;
 
 void init_regex();
 void init_wp_pool();
+void isa_reg_display();
 
-/* We use the `readline' library to provide more flexibility to read from stdin. */
-static char* rl_gets() {
-  static char *line_read = NULL;
+static int is_batch_mode = false;
+static int cmd_c(char *args);
+static int cmd_q(char *args);
+static int cmd_help(char *args);
+static int cmd_si(char *args);
+static int cmd_info(char *args);
+static int cmd_x(char *args);
 
-  if (line_read) {
-    free(line_read);
-    line_read = NULL;
-  }
-
-  line_read = readline("(nemu) ");
-
-  if (line_read && *line_read) {
-    add_history(line_read);
-  }
-
-  return line_read;
+static struct {
+  const char *name;
+  const char *description;
+  int (*handler) (char *);
 }
+
+cmd_table [] = {
+  { "help", "Information", cmd_help },
+  { "c", "Continue", cmd_c },
+  { "q", "Exit", cmd_q },
+  { "si", "Step", cmd_si },
+  { "info", "Print", cmd_info},
+  { "x", "Scan", cmd_x },
+  //{ "p", "Caculate", cmd_p },
+ // { "w", "Watch", cmd_w },
+ // { "d", "Delite", cmd_d }
+};
 
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;
 }
 
-
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
 }
-
-static int cmd_help(char *args);
-
-static struct {
-  const char *name;
-  const char *description;
-  int (*handler) (char *);
-} cmd_table [] = {
-  { "help", "Display information about all supported commands", cmd_help },
-  { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },
-
-  /* TODO: Add more commands */
-
-};
-
-#define NR_CMD ARRLEN(cmd_table)
 
 static int cmd_help(char *args) {
   /* extract the first argument */
@@ -90,6 +86,79 @@ static int cmd_help(char *args) {
     printf("Unknown command '%s'\n", arg);
   }
   return 0;
+}
+
+static int cmd_si(char *args){
+	char *arg = strtok(NULL, " ");
+	int N = 0;
+	
+	if (arg == NULL) {
+		N=1;
+		cpu_exec(N);
+		printf("Command excuted %d time",N);
+	}
+	
+	else {
+		N = atoi(arg);
+		cpu_exec(N);
+		printf("Command excuted %d times",N);
+	} 
+	return 0;
+}
+
+static int cmd_info(char *args){
+	char *arg = strtok(NULL, " ");
+
+	if (strcmp(arg,"r")==0) {
+		printf("Display the reg information\n");
+		isa_reg_display();
+	}//对比一致才会输出0
+	
+	else if(strcmp(arg,"w")==0){
+		printf("Display the watchpoint information\n");
+		//isa_watchpoint_display();
+	} 
+	return 0;
+}
+
+static int cmd_x(char *args){
+
+	char *arg1 = strtok(NULL, " ");
+	char *arg2 = strtok(NULL, " ");
+	
+    int N = strtol(arg1,NULL,10);
+    vaddr_t EXPR = strtol(arg2,NULL,16);
+    //这里的strtol将字符串转换为长整数型
+    //第一个参数为转换目标，第二个参数默认为NULL，第三个参数为进制
+    
+	if (arg1 == NULL || arg2 == NULL){
+		printf("Args number is not enough\n");
+		printf("Example:x N EXPR\n");
+		return 0;
+	}
+	else{
+		printf("Scan : x %d %#010x\n",N,EXPR);
+		
+	}
+	return 0;
+}
+
+/* We use the `readline' library to provide more flexibility to read from stdin. */
+static char* rl_gets() {
+  static char *line_read = NULL;
+
+  if (line_read) {
+    free(line_read);
+    line_read = NULL;
+  }
+
+  line_read = readline("(nemu) ");
+
+  if (line_read && *line_read) {
+    add_history(line_read);
+  }
+
+  return line_read;
 }
 
 void sdb_set_batch_mode() {
@@ -125,7 +194,9 @@ void sdb_mainloop() {
     int i;
     for (i = 0; i < NR_CMD; i ++) {
       if (strcmp(cmd, cmd_table[i].name) == 0) {
-        if (cmd_table[i].handler(args) < 0) { return; }
+        if (cmd_table[i].handler(args) < 0) { 
+        return; 
+        }
         break;
       }
     }
@@ -141,3 +212,4 @@ void init_sdb() {
   /* Initialize the watchpoint pool. */
   init_wp_pool();
 }
+

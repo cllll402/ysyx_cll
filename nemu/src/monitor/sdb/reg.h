@@ -13,17 +13,21 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#include <isa.h>
-#include <memory/paddr.h>
+#ifndef __RISCV_REG_H__
+#define __RISCV_REG_H__
 
-word_t vaddr_ifetch(vaddr_t addr, int len) {
-  return paddr_read(addr, len);
+#include <common.h>
+
+static inline int check_reg_idx(int idx) {
+  IFDEF(CONFIG_RT_CHECK, assert(idx >= 0 && idx < MUXDEF(CONFIG_RVE, 16, 32)));
+  return idx;
 }
 
-word_t vaddr_read(vaddr_t addr, int len) {
-  return paddr_read(addr, len);
+#define gpr(idx) (cpu.gpr[check_reg_idx(idx)])
+
+static inline const char* reg_name(int idx) {
+  extern const char* regs[];
+  return regs[check_reg_idx(idx)];
 }
 
-void vaddr_write(vaddr_t addr, int len, word_t data) {
-  paddr_write(addr, len, data);
-}//这里vaddr充当中间层，传递三个参数给paddr
+#endif
