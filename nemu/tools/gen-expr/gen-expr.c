@@ -101,34 +101,27 @@ void gen_expr_result(){
     
     char *e = NULL;
     size_t len_e = 0;
-    word_t result;
+    uint32_t result;
     ssize_t read;
-    int test_result; 
 
-    read = getline(&e, &len_e, fp);
-    if (read == -1) {
-        perror("Failed to read expression");
-        fclose(fp);
-        if (e) free(e);
-        return;
-    }
-    
-    if (read > 0 && e[read - 1] == '\n') {
-        e[read - 1] = '\0';
-    }
+    while ((read = getline(&e, &len_e, fp)) != -1) {
 
-    test_result = fscanf(fp, "%u", &result);
-    /*if (test_result != 1) {
-        perror("Failed to read test result");
-        fclose(fp);
-        if (e) free(e);
-        return;
-    }*/
-	
-	printf("Expression: %s\n", e);
-    printf("Expected Result: %d\n", test_result);
-	fclose(fp);
-	
+        if (read > 0 && e[read - 1] == '\n') {
+            e[read - 1] = '\0';
+        }
+        char *eq_pos = strrchr(e, '=');
+        if (eq_pos == NULL) {
+            printf("Invalid input format\n");
+            continue;
+        }
+
+        *eq_pos = '\0';
+        result = strtoul(eq_pos + 1, NULL, 10);
+        
+        printf("%s = %u\n", e,result);
+        fgetc(fp);
+    }
+    fclose(fp);
     if (e) free(e);
 }
 	
@@ -165,8 +158,6 @@ int main(int argc, char *argv[]) {
     fp = popen("/tmp/.expr", "r");
     ret = fscanf(fp, "%d", &result);
     pclose(fp);    //如果执行编译失败，则跳过执行后面的命令
-    
-    printf("Expr[%d]:%s=%d\n\n",i,buf,result);
     
     remove("/tmp/.code.c");
 	remove("/tmp/.expr");
