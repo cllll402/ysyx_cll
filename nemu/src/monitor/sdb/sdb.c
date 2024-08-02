@@ -175,24 +175,21 @@ static int cmd_p(char *args){
 	bool success = false;
 	char *arg = strtok(NULL, " ");
 	
-	word_t result = expr(e,&success);
-	
 	if (arg == NULL) {
-    printf("You need to input the tokens\n");
+    printf("You need to input the args\n");
     }
     
     else {
     strncpy(e, arg, sizeof(e)-1);
 	e[sizeof(e)-1]= '\0';
     }
-    
+    word_t result = expr(e,&success);
     if (success) {
     printf("\033[1;31mThe final result is :%d \033[0m \n",result);
     }
     else {
     printf("\033[1;31mThe fomula is error\033[0m \n");
     }
-    puts(e);
 	return 0;
 }
 

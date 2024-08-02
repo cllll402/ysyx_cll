@@ -113,13 +113,13 @@ static bool make_tokens(char *e) {
             if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
                 char *substr_start = e + position;
                 int substr_len = pmatch.rm_eo;
-    
+                  
                 printf("At position [%d] match the char \"%c\" \nwith rules[%d] \"%s\"\n\n", position, substr_start[0], i, rules[i].regex);
                 position += substr_len;
                 tokens[nr_tokens].type = rules[i].tokens_type;
 
                 if (tokens[nr_tokens].type == TK_NOTYPE) {
-                    break;
+                break;
                 }
     
                 if (tokens[nr_tokens].type == TK_NUM || 
