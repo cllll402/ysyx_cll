@@ -177,11 +177,7 @@ static int cmd_p(char *args){
 	
 	word_t result = expr(e,&success);
 	
-	if (arg == 'p'){
-	test_comparison();
-	}
-	
-	else if (arg == NULL) {
+	if (arg == NULL) {
     printf("You need to input the tokens\n");
     }
     
@@ -264,7 +260,7 @@ void sdb_mainloop() {
 
 void test_comparison() {
 
-    FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/input","r");
+    FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input","r");
 	
 	if (fp == NULL) {
     printf("\033[31mCan't find the file\033[0m\n");
