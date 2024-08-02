@@ -20,50 +20,158 @@
 #include <assert.h>
 #include <string.h>
 
-// this should be enough
+typedef uint32_t word_t;
+
 static char buf[65536] = {};
-static char code_buf[65536 + 128] = {}; // a little larger than `buf`
+static char code_buf[65536 + 128] = {}; 
+
 static char *code_format =
-"#include <stdio.h>\n"
+"#include <stdio.h>\n\n"
 "int main() { "
-"  unsigned result = %s; "
-"  printf(\"%%u\", result); "
+"  int result = 0; "
+"  result = %s; "
+"  printf(\"%%d\", result); "
 "  return 0; "
 "}";
 
-static void gen_rand_expr() {
-  buf[0] = '\0';
+static uint32_t choose(int max) {
+	return rand() % max;
 }
 
-int main(int argc, char *argv[]) {
-  int seed = time(0);
-  srand(seed);
-  int loop = 1;
-  if (argc > 1) {
-    sscanf(argv[1], "%d", &loop);
+static void gen(char c) {
+	char str[2] = {c, '\0'};
+	strcat(buf, str);  
+}
+
+static void gen_rand_num() {
+	int num = choose(100);
+	char str[12];
+	snprintf(str,sizeof(str),"%d",num);
+	strcat(buf, str);
+}
+
+static void gen_rand_op() {
+	switch (choose(4)) {
+    case 0: 
+	gen('+');
+    break;
+    
+    case 1: 
+	gen('-');
+    break;
+    
+    case 2:
+    gen('*');
+    break;
+    
+	default:
+	gen('/');
+    break;
   }
-  int i;
-  for (i = 0; i < loop; i ++) {
+}
+
+static void gen_rand_expr() {
+
+    switch (choose(3)) {
+		case 0: 
+		gen_rand_num(); 
+		break;
+		
+		case 1: 
+		gen('('); 
+		gen_rand_expr(); 
+		gen(')'); 
+		break;
+		
+		default: 
+		gen_rand_expr(); 
+		gen_rand_op(); 
+		gen_rand_expr(); 
+		break;
+    }
+}
+
+void gen_expr_result(){
+	FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input","r");
+	
+	if (fp == NULL) {
+    printf("\033[31mFailed to open file\033[0m\n");
+    return;
+    }
+    
+    char *e = NULL;
+    size_t len_e = 0;
+    word_t result;
+    ssize_t read;
+    int test_result; 
+
+    read = getline(&e, &len_e, fp);
+    if (read == -1) {
+        perror("Failed to read expression");
+        fclose(fp);
+        if (e) free(e);
+        return;
+    }
+    
+    if (read > 0 && e[read - 1] == '\n') {
+        e[read - 1] = '\0';
+    }
+
+    test_result = fscanf(fp, "%u", &result);
+    /*if (test_result != 1) {
+        perror("Failed to read test result");
+        fclose(fp);
+        if (e) free(e);
+        return;
+    }*/
+	
+	printf("Expression: %s\n", e);
+    printf("Expected Result: %d\n", test_result);
+	fclose(fp);
+	
+    if (e) free(e);
+}
+	
+int main(int argc, char *argv[]) {
+    
+    int ret;
+    int result;
+    int loop = 1;
+    int seed = time(0);
+    srand(seed);
+    
+    if (argv[1] == NULL){
+    loop = 10;
+    } 
+    
+    if (argc > 1) {
+    sscanf(argv[1], "%d", &loop);
+    }
+    
+    for (int i = 0; i < loop; i ++) {
+    buf[0] = '\0';
     gen_rand_expr();
 
     sprintf(code_buf, code_format, buf);
-
     FILE *fp = fopen("/tmp/.code.c", "w");
-    assert(fp != NULL);
     fputs(code_buf, fp);
-    fclose(fp);
-
-    int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
-    if (ret != 0) continue;
-
+    fclose(fp);    //将模板写入缓存区，再将缓存区写入文件code
+    
+    ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+    if (ret != 0) {
+    assert(0);
+    }
+    
     fp = popen("/tmp/.expr", "r");
-    assert(fp != NULL);
-
-    int result;
     ret = fscanf(fp, "%d", &result);
-    pclose(fp);
-
-    printf("%u %s\n", result, buf);
-  }
-  return 0;
+    pclose(fp);    //如果执行编译失败，则跳过执行后面的命令
+    
+    printf("Expr[%d]:%s=%d\n\n",i,buf,result);
+    
+    remove("/tmp/.code.c");
+	remove("/tmp/.expr");
+	gen_expr_result();
+	
+    }
+    return 0;
 }

@@ -17,10 +17,16 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "sdb.h"
-#include "reg.h"
+#include "expr.h"
+#include "/home/cll/ysyx/ysyx-workbench/nemu/src/isa/riscv32/local-include/reg.h"
+#include "/home/cll/ysyx/ysyx-workbench/nemu/include/memory/vaddr.h"
+#include "/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/gen_expr.h"
 
 #define NR_CMD ARRLEN(cmd_table)
+
+#define PMEM_START 0x80000000
+#define PMEM_END   0x87FFFFFF
+//明确一下pmen的地址范围
 
 typedef uint32_t vaddr_t;
 typedef uint32_t word_t;
@@ -28,7 +34,8 @@ typedef uint32_t word_t;
 void init_regex();
 void init_wp_pool();
 void isa_reg_display();
-
+void test_comparison();
+ 
 static int is_batch_mode = false;
 static int cmd_c(char *args);
 static int cmd_q(char *args);
@@ -36,6 +43,9 @@ static int cmd_help(char *args);
 static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
+static int cmd_p(char *args);
+//static int cmd_w(char *args);
+//static int cmd_d(char *args);
 
 static struct {
   const char *name;
@@ -50,7 +60,7 @@ cmd_table [] = {
   { "si", "Step", cmd_si },
   { "info", "Print", cmd_info},
   { "x", "Scan", cmd_x },
-  //{ "p", "Caculate", cmd_p },
+  { "p", "Caculate", cmd_p },
  // { "w", "Watch", cmd_w },
  // { "d", "Delite", cmd_d }
 };
@@ -109,15 +119,20 @@ static int cmd_si(char *args){
 static int cmd_info(char *args){
 	char *arg = strtok(NULL, " ");
 
-	if (strcmp(arg,"r")==0) {
-		printf("Display the reg information\n");
-		isa_reg_display();
-	}//对比一致才会输出0
-	
-	else if(strcmp(arg,"w")==0){
-		printf("Display the watchpoint information\n");
-		//isa_watchpoint_display();
-	} 
+    if (arg == NULL) {
+        printf("You need to input r/w\n");
+    }
+    else if (strcmp(arg, "r") == 0) {
+        printf("Display the reg information\n");
+        isa_reg_display();
+    }
+    else if (strcmp(arg, "w") == 0) {
+        printf("Display the watchpoint information\n");
+        // isa_watchpoint_display();
+    }
+    else {
+        printf("You need to input r/w\n");
+    }
 	return 0;
 }
 
@@ -125,21 +140,63 @@ static int cmd_x(char *args){
 
 	char *arg1 = strtok(NULL, " ");
 	char *arg2 = strtok(NULL, " ");
-	
-    int N = strtol(arg1,NULL,10);
+    
+	if (arg1 == NULL || arg2 == NULL){
+		printf("Args number is not enough\n");
+		printf("Example:x N EXPR\n\n");
+		
+		printf("PS:PMEM_START 0x80000000\n   PMEM_END   0x87FFFFFF\n");
+		return 0;
+	}
+
+	int N = strtol(arg1,NULL,10);
     vaddr_t EXPR = strtol(arg2,NULL,16);
     //这里的strtol将字符串转换为长整数型
     //第一个参数为转换目标，第二个参数默认为NULL，第三个参数为进制
     
-	if (arg1 == NULL || arg2 == NULL){
-		printf("Args number is not enough\n");
-		printf("Example:x N EXPR\n");
-		return 0;
+	for (int i = 0; i < N;) {
+			printf("%#010x: ", EXPR);
+			
+			for (int j = 0; i < N && j < 4; i++, j++) {
+				word_t w = vaddr_read(EXPR, 4);
+				EXPR += 4;
+				printf("%#010x ", w);
+			}
+		puts("");
 	}
-	else{
-		printf("Scan : x %d %#010x\n",N,EXPR);
-		
+	return 0;
+}
+
+static int cmd_p(char *args){
+	
+	init_regex();
+	
+	char e[256];
+	bool success = false;
+	char *arg = strtok(NULL, " ");
+	
+	word_t result = expr(e,&success);
+	
+	if (arg == 'p'){
+	test_comparison();
 	}
+	
+	else if (arg == NULL) {
+    printf("You need to input the tokens\n");
+    }
+    
+    else {
+    strncpy(e, arg, sizeof(e)-1);
+	e[sizeof(e)-1]= '\0';
+    }
+    
+    if (success) {
+    printf("\033[1;31mThe final result is :%d \033[0m \n",result);
+    }
+    else {
+    printf("\033[1;31mThe fomula is error\033[0m \n");
+    }
+    puts(e);
 	return 0;
 }
 
@@ -200,16 +257,53 @@ void sdb_mainloop() {
         break;
       }
     }
-
+	
     if (i == NR_CMD) { printf("Unknown command '%s'\n", cmd); }
   }
 }
 
-void init_sdb() {
-  /* Compile the regular expressions. */
-  init_regex();
+void test_comparison() {
 
-  /* Initialize the watchpoint pool. */
-  init_wp_pool();
+    FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/input","r");
+	
+	if (fp == NULL) {
+    printf("\033[31mCan't find the file\033[0m\n");
+    return;
+    }
+    
+    char *e = NULL;
+    size_t len_e = 0;
+    int32_t result;
+    ssize_t read;
+
+    while ((read = getline(&e, &len_e, fp)) != -1) {
+
+        if (read > 0 && e[read - 1] == '\n') {
+            e[read - 1] = '\0';
+        }
+
+        char *eq_pos = strrchr(e, '=');
+        *eq_pos = '\0';
+        result = strtoul(eq_pos + 1, NULL, 10);
+        fgetc(fp);
+    }
+    if (result != expr_result) {
+	printf("Expected: %d, Got: %d\n", expr_result, result);
+	assert(0);
+	}
+		
+	else {
+	printf("The test is right.The final value is %d\n",expr_result);
+	}
+	
+    fclose(fp);
+    if (e) free(e); 
+ } 
+
+void init_sdb() {
+    /* Compile the regular expressions. */
+    init_regex();
+    /* Initialize the watchpoint pool. */
+    init_wp_pool();
 }
 
