@@ -20,7 +20,7 @@
 #include "expr.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/isa/riscv32/local-include/reg.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/include/memory/vaddr.h"
-#include "/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/gen_expr.h"
+
 
 #define NR_CMD ARRLEN(cmd_table)
 
@@ -255,7 +255,7 @@ void sdb_mainloop() {
   }
 }
 
-/*void test_comparison() {
+void test_comparison() {
 
     FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input","r");
 	
@@ -278,25 +278,30 @@ void sdb_mainloop() {
         char *eq_pos = strrchr(e, '=');
         *eq_pos = '\0';
         result = strtoul(eq_pos + 1, NULL, 10);
+        
+        printf("%s = %ld\n", e,result);
         fgetc(fp);
     }
+    word_t expr_result = expr(e,&success);
+    
     if (result != expr_result) {
 	printf("Expected: %d, Got: %d\n", expr_result, result);
 	assert(0);
 	}
 		
 	else {
-	printf("The test is right.The final value is %d\n",expr_result);
+	printf("The test is right.The final value is %d\n",result);
 	}
 	
     fclose(fp);
     if (e) free(e); 
  } 
-*/
+
 void init_sdb() {
     /* Compile the regular expressions. */
     init_regex();
     /* Initialize the watchpoint pool. */
     init_wp_pool();
+    test_comparison();
 }
 

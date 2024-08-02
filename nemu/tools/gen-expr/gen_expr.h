@@ -18,6 +18,6 @@
 
 #include <common.h>
 
-
+void gen_expr_result();
 
 #endif

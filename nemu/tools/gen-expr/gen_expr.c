@@ -20,21 +20,20 @@
 #include <assert.h>
 #include <string.h>
 
-typedef uint32_t word_t;
-
 static char buf[65536] = {};
 static char code_buf[65536 + 128] = {}; 
 
 static char *code_format =
-"#include <stdio.h>\n\n"
+"#include <stdio.h>\n"
+"#include <stdint.h>\n\n"
 "int main() { "
-"  int result = 0; "
+"  uint64_t result = 0; "
 "  result = %s; "
-"  printf(\"%%d\", result); "
+"  printf(\"%%ld\", result); "
 "  return 0; "
 "}";
 
-static uint32_t choose(int max) {
+static int choose(int max) {
 	return rand() % max;
 }
 
@@ -71,13 +70,13 @@ static void gen_rand_op() {
 }
 
 static void gen_rand_expr() {
-
+	
     switch (choose(3)) {
 		case 0: 
 		gen_rand_num(); 
 		break;
 		
-		case 1: 
+		case 1:
 		gen('('); 
 		gen_rand_expr(); 
 		gen(')'); 
@@ -101,7 +100,7 @@ void gen_expr_result(){
     
     char *e = NULL;
     size_t len_e = 0;
-    uint32_t result;
+    uint64_t result;
     ssize_t read;
 
     while ((read = getline(&e, &len_e, fp)) != -1) {
@@ -118,7 +117,7 @@ void gen_expr_result(){
         *eq_pos = '\0';
         result = strtoul(eq_pos + 1, NULL, 10);
         
-        printf("%s = %u\n", e,result);
+        printf("%s = %ld\n", e,result);
         fgetc(fp);
     }
     fclose(fp);
@@ -128,7 +127,7 @@ void gen_expr_result(){
 int main(int argc, char *argv[]) {
     
     int ret;
-    int result;
+    uint64_t result;
     int loop = 1;
     int seed = time(0);
     srand(seed);
@@ -144,7 +143,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < loop; i ++) {
     buf[0] = '\0';
     gen_rand_expr();
-
+	printf("Expr[%d]: %s\n", i , buf);
     sprintf(code_buf, code_format, buf);
     FILE *fp = fopen("/tmp/.code.c", "w");
     fputs(code_buf, fp);
@@ -156,7 +155,7 @@ int main(int argc, char *argv[]) {
     }
     
     fp = popen("/tmp/.expr", "r");
-    ret = fscanf(fp, "%d", &result);
+    ret = fscanf(fp, "%lu", &result);
     pclose(fp);    //如果执行编译失败，则跳过执行后面的命令
     
     remove("/tmp/.code.c");
