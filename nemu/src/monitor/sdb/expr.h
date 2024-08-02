@@ -13,31 +13,11 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#include "expr.h"
+#ifndef __EXPR_H__
+#define __EXPR_H__
 
-#define NR_WP 32
+#include <common.h>
 
-typedef struct watchpoint {
-  int NO;
-  struct watchpoint *next;
+word_t expr(char *e, bool *success);
 
-  /* TODO: Add more members if necessary */
-
-} WP;
-
-static WP wp_pool[NR_WP] = {};
-static WP *head = NULL, *free_ = NULL;
-
-void init_wp_pool() {
-  int i;
-  for (i = 0; i < NR_WP; i ++) {
-    wp_pool[i].NO = i;
-    wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
-  }
-
-  head = NULL;
-  free_ = wp_pool;
-}
-
-/* TODO: Implement the functionality of watchpoint */
-
+#endif

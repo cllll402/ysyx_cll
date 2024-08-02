@@ -258,7 +258,7 @@ void sdb_mainloop() {
   }
 }
 
-void test_comparison() {
+/*void test_comparison() {
 
     FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input","r");
 	
@@ -295,7 +295,7 @@ void test_comparison() {
     fclose(fp);
     if (e) free(e); 
  } 
-
+*/
 void init_sdb() {
     /* Compile the regular expressions. */
     init_regex();

@@ -44,7 +44,6 @@ enum {
     TK_VAR,
     TK_REG,
     TK_NEG,
-    TK_DOUBLE_NEG,
     // ASCII 为 0-255，所以编码从 256 开始，其他类型顺序排列下来
 };
 
@@ -100,7 +99,7 @@ typedef struct token {
 } Token;
 
 static Token tokens[32] __attribute__((used)) = {};
-static int nr_token __attribute__((used))  = 0;
+static int nr_tokens __attribute__((used))  = 0;
 
 static bool make_tokens(char *e) {
     int position = 0;
@@ -164,8 +163,6 @@ static bool make_tokens(char *e) {
     return true;
 }
 
-
-
 word_t eval(int p, int q, bool *check) {
   *check = true;
   if (p > q) {
@@ -180,10 +177,12 @@ word_t eval(int p, int q, bool *check) {
     word_t ret = strtol(tokens[p].str, NULL, 10);
     return ret;
   } 
+  
   else if (check_parentheses(p, q)) {
-  	if ( tokens[p + 1].type == TK_NEG){
-  	word_t val2 = 
-  	}
+    if (tokens[p + 1].type == TK_NEG) {
+      word_t val2 = eval(p + 2, q - 1, check);
+      return -val2;
+    }
     return eval(p+1, q-1, check); //剥离最外层的括号再进行一次处理
   } 
   
@@ -277,16 +276,15 @@ int find_major(int p, int q) {
       }
     }
   }
-  
-  if (count != 0) return -1;  // Mismatched parentheses
+  if (count != 0) return -1;  
   return ret;
 }
 
 word_t expr(char *e, bool *success) {
-  if (!make_token(e)) {
+  if (!make_tokens(e)) {
     *success = false;
     return 0;
   }
-  return eval(0, nr_token-1, success);;
+  return eval(0, nr_tokens-1, success);
 }
 

@@ -13,11 +13,11 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#ifndef __SDB_H__
-#define __SDB_H__
+#ifndef __GEN_EXPR_H__
+#define __GEN_EXPR_H__
 
 #include <common.h>
 
-word_t expr(char *e, bool *success);
+
 
 #endif
