@@ -20,25 +20,56 @@
  */
 #include <regex.h>
 
-enum {
-  TK_NOTYPE = 256, TK_EQ,
+word_t eval(int p, int q, bool *check);
+int find_major(int p, int q);
+bool check_parentheses (int p, int q);
 
-  /* TODO: Add more token types */
-
+enum { 
+    TK_NOTYPE = 256, 
+    TK_EQ,
+    TK_NEQ,
+    TK_LT,
+    TK_GT,
+    TK_LE,
+    TK_GE,
+    TK_ASSIGN,
+    TK_PLUS,
+    TK_MINUS,
+    TK_MULTIPLY,
+    TK_DIVIDE,
+    TK_MOD,
+    TK_LPAREN,
+    TK_RPAREN,
+    TK_NUM,
+    TK_VAR,
+    TK_REG,
+    TK_NEG,
+    TK_DOUBLE_NEG,
+    // ASCII 为 0-255，所以编码从 256 开始，其他类型顺序排列下来
 };
 
 static struct rule {
-  const char *regex;
-  int token_type;
+    const char *regex;
+    int tokens_type;
 } rules[] = {
-
-  /* TODO: Add more rules.
-   * Pay attention to the precedence level of different rules.
-   */
-
-  {" +", TK_NOTYPE},    // spaces
-  {"\\+", '+'},         // plus
-  {"==", TK_EQ},        // equal
+    {" +", TK_NOTYPE},               // 空格
+    {"==", TK_EQ},                   // 等号
+    {"!=", TK_NEQ},                  // 不等号 
+    {"<=", TK_LE},                   // 小于等于
+    {">=", TK_GE},                   // 大于等于
+    {"<", TK_LT},                    // 小于
+    {">", TK_GT},                    // 大于
+    {"=", TK_ASSIGN},                // 赋值
+    {"\\+", TK_PLUS},                // 加号
+    {"-", TK_MINUS},                 // 减号
+    {"\\*", TK_MULTIPLY},            // 乘号
+    {"/", TK_DIVIDE},                // 除号
+    {"%", TK_MOD},                   // 取模
+    {"\\(", TK_LPAREN},              // 左括号 
+    {"\\)", TK_RPAREN},              // 右括号
+    {"[0-9]+", TK_NUM},              // 数字
+    {"[A-Za-z_]\\w*", TK_VAR},       // 变量 
+    {"\\$\\w+", TK_REG},             // 寄存器
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -53,12 +84,13 @@ void init_regex() {
   char error_msg[128];
   int ret;
 
+//NR_REGEX为遍寻rules中的类型
   for (i = 0; i < NR_REGEX; i ++) {
     ret = regcomp(&re[i], rules[i].regex, REG_EXTENDED);
     if (ret != 0) {
       regerror(ret, &re[i], error_msg, 128);
-      panic("regex compilation failed: %s\n%s", error_msg, rules[i].regex);
-    }
+      panic("Regex compilation failed: %s\n%s", error_msg, rules[i].regex);
+    }//ret=0时程序继续输出报错信息，regex为正则表达式提供了库
   }
 }
 
@@ -77,7 +109,7 @@ static bool make_tokens(char *e) {
     
     nr_tokens = 0;
     while (e[position] != '\0') {
-        /* Try all rules one by one. */
+
         for (i = 0; i < NR_REGEX; i ++) {
             if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
                 char *substr_start = e + position;
@@ -129,7 +161,6 @@ static bool make_tokens(char *e) {
             tokens[i].type = TK_NEG;
         }
     }
-
     return true;
 }
 
@@ -215,34 +246,29 @@ int find_major(int p, int q) {
   
   for (int i = p; i <= q; i++) {
     if (tokens[i].type == TK_NUM) {
-      continue;  // Skip numbers
+      continue;  
     }
     
     if (tokens[i].type == TK_LPAREN) {
-      count++;   // Increase count for left parenthesis
+      count++;   
     } 
     
     else if (tokens[i].type == TK_RPAREN) {
-      if (count == 0) {
-        return -1;  // Mismatched parentheses
-      }
-      count--;   // Decrease count for right parenthesis
+      count--;  
     } 
     
     else if (count > 0) {
-      continue;  // Skip operators inside parentheses
+      continue;  
     } 
     
     else {
       int tmp_type = 0;
       switch (tokens[i].type) {
-      case TK_MULTIPLY: 
-      case TK_DIVIDE: 
-        tmp_type = 1; break;
-      case TK_PLUS: 
-      case TK_MINUS: 
-      case TK_NEG:    // Include TK_NEG in the same priority level as TK_MINUS
-        tmp_type = 2; break;
+      case TK_MULTIPLY: tmp_type = 1; break;
+      case TK_DIVIDE: tmp_type = 1; break;
+      case TK_PLUS: tmp_type = 2; break;
+      case TK_MINUS: tmp_type = 2; break;
+      case TK_NEG: tmp_type = 3; break;
       default: assert(0);
       }
       if (tmp_type >= op_type) {
@@ -261,7 +287,6 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-
   return eval(0, nr_token-1, success);;
 }
 
