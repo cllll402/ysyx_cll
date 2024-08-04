@@ -20,37 +20,40 @@
  */
 #include <regex.h>
 
-word_t eval(int p, int q, bool *check);
+
+int32_t eval(int p, int q, bool *check);
 int find_major(int p, int q);
 bool check_parentheses (int p, int q);
 
 enum { 
-    TK_NOTYPE = 256, 
-    TK_EQ,
-    TK_NEQ,
-    TK_LT,
-    TK_GT,
-    TK_LE,
-    TK_GE,
-    TK_ASSIGN,
-    TK_PLUS,
-    TK_MINUS,
-    TK_MULTIPLY,
-    TK_DIVIDE,
-    TK_MOD,
-    TK_LPAREN,
-    TK_RPAREN,
-    TK_NUM,
-    TK_VAR,
-    TK_REG,
-    TK_NEG,
+    TK_NOTYPE = 256,     // 空格
+	TK_EQ,               // 等于号
+	TK_NEQ,              // 不等于号
+	TK_LT,               // 小于号
+	TK_GT,               // 大于号
+	TK_LE,               // 小于等于号
+	TK_GE,               // 大于等于号
+	TK_ASSIGN,           // 赋值号
+	TK_PLUS,             // 加号
+	TK_MINUS,            // 减号
+	TK_MULTIPLY,         // 乘号
+	TK_DIVIDE,           // 除号
+	TK_MOD,              // 取模号
+	TK_LPAREN,           // 左括号
+	TK_RPAREN,           // 右括号
+	TK_NUM,              // 数字
+	TK_VAR,              // 变量
+	TK_REG,              // 寄存器
+	TK_NEG,              // 负号
+	TK_PTR,
     // ASCII 为 0-255，所以编码从 256 开始，其他类型顺序排列下来
 };
 
 static struct rule {
     const char *regex;
     int tokens_type;
-} rules[] = {
+} 
+rules[] = {
     {" +", TK_NOTYPE},               // 空格
     {"==", TK_EQ},                   // 等号
     {"!=", TK_NEQ},                  // 不等号 
@@ -114,7 +117,7 @@ static bool make_tokens(char *e) {
                 char *substr_start = e + position;
                 int substr_len = pmatch.rm_eo;
                   
-                printf("At position [%d] match the char \"%c\" \nwith rules[%d] \"%s\"\n\n", position, substr_start[0], i, rules[i].regex);
+                //printf("At position [%d] match the char \"%c\" \nwith rules[%d] \"%s\"\n\n", position, substr_start[0], i, rules[i].regex);
                 position += substr_len;
                 tokens[nr_tokens].type = rules[i].tokens_type;
 
@@ -153,73 +156,81 @@ static bool make_tokens(char *e) {
     }
     
     for (i = 0; i < nr_tokens; i++) {
-        if (tokens[i].type == TK_MINUS &&
-            (i == 0 || tokens[i - 1].type == TK_LPAREN || 
-             tokens[i - 1].type == TK_PLUS || tokens[i - 1].type == TK_MINUS || 
-             tokens[i - 1].type == TK_MULTIPLY || tokens[i - 1].type == TK_DIVIDE)) {
-            tokens[i].type = TK_NEG;
+        if (tokens[i].type == TK_MINUS && tokens[i - 1].type == TK_LPAREN) {
+        tokens[i].type = TK_NEG;
         }
-    }
+    }//区分负和减
+    
+    for (i = 0; i < nr_tokens; i++) {
+        if (tokens[i].type == TK_MULTIPLY && tokens[i - 1].type ==TK_LPAREN) {
+        tokens[i].type = TK_PTR;
+        printf("there is a pointer\n");
+        }
+    }//区分指针和乘法
+    
     return true;
 }
 
-word_t eval(int p, int q, bool *check) {
-  *check = true;
-  if (p > q) {
-  assert(0);
-  } 
-  
-  else if (p == q) {
-    if (tokens[p].type != TK_NUM) {
-      *check = false;
-      return 0;
-    }
-    word_t ret = strtol(tokens[p].str, NULL, 10);
-    return ret;
-  } 
-  
-  else if (check_parentheses(p, q)) {
-    if (tokens[p + 1].type == TK_NEG) {
-      word_t val2 = eval(p + 2, q - 1, check);
-      return -val2;
-    }
-    return eval(p+1, q-1, check); //剥离最外层的括号再进行一次处理
-  } 
-  
-  else {    
-    int op = find_major(p, q);
-    if (op < 0) {
-    assert(0);
-    }
+int32_t eval(int p, int q, bool *check) {
+		*check = true;
+		if (p > q) {
+		assert(0);
+		} 
+		
+		else if (p == q) {
+		  if (tokens[p].type != TK_NUM) {
+		    *check = false;
+		    return 0;
+		  }
+		  word_t ret = strtol(tokens[p].str, NULL, 10);
+		  return ret;
+		} 
+		
+		else if (check_parentheses(p, q)) {
+			if (tokens[p + 1].type == TK_NEG) {
+			word_t val2 = eval(p + 2, q - 1, check);
+			return -val2;
+			}
+			
+		/*	else if (tokens[p + 1].type == TK_PTR) {
+			word_t val2 = eval(p + 2, q - 1, check);
+			return val2;      //指针寄存器的处理还没结束
+			}*/return eval(p+1, q-1, check); //剥离最外层的括号再进行一次处理
+		} 
+		
+		else {    
+		    int op = find_major(p, q);
+		    if (op < 0) {
+		    assert(0);
+		    }
 
-    word_t val1 = eval(p, op-1, check);
-    if (!*check) return 0;
-    word_t val2 = eval(op+1, q, check);
-    if (!*check) return 0;
-    
-    switch(tokens[op].type) {
-      case TK_PLUS: {
-      return val1 + val2;
-      }
-      
-      case TK_MINUS: {
-      return val1 - val2;
-      }
-      
-      case TK_MULTIPLY: {
-      return val1 * val2;
-      }
-      
-      case TK_DIVIDE: {
-		  if (val2 == 0) {
-		  *check = false;
-		  return 0;
-		  } 
-	  return (sword_t)val1 / (sword_t)val2; 
-      }     
-      default: assert(0);
-    }
-  }
+		    word_t val1 = eval(p, op-1, check);
+		    if (!*check) return 0;
+		    word_t val2 = eval(op+1, q, check);
+		    if (!*check) return 0;
+		  
+		    switch(tokens[op].type) {
+		    case TK_PLUS: {return val1 + val2;}
+		    case TK_MINUS: {return val1 - val2;}
+		    case TK_MULTIPLY: {return val1 * val2;}
+		    
+		    case TK_DIVIDE: {
+				if (val2 == 0) {
+				*check = false;
+				return 0;
+				} 
+			return (int32_t)val1 / (int32_t)val2; 
+		    } 
+		    case TK_EQ: {return val1 == val2;}
+		    case TK_NEQ: {return val1 != val2;}
+		    case TK_LT: {return val1 < val2;}
+		    case TK_LE: {return val1 <= val2;}
+		    case TK_GT: {return val1 > val2;}
+		    case TK_GE: {return val1 >= val2;}
+		    case TK_ASSIGN: {return val1 = val2;}
+		    default: assert(0);
+		  }
+		}
 }
 
 bool check_parentheses(int p, int q) {
@@ -263,11 +274,15 @@ int find_major(int p, int q) {
     else {
       int tmp_type = 0;
       switch (tokens[i].type) {
-      case TK_MULTIPLY: tmp_type = 1; break;
-      case TK_DIVIDE: tmp_type = 1; break;
-      case TK_PLUS: tmp_type = 2; break;
-      case TK_MINUS: tmp_type = 2; break;
+      case TK_MULTIPLY: case TK_DIVIDE: tmp_type = 1; break;
+      
+      case TK_PLUS: case TK_MINUS: tmp_type = 2; break;
+      
       case TK_NEG: tmp_type = 3; break;
+      
+      case TK_EQ:case TK_NEQ:case TK_LT:case TK_LE:case TK_GT:case TK_GE:case TK_ASSIGN: tmp_type = 3; break;
+      
+      case TK_PTR: break;
       default: assert(0);
       }
       if (tmp_type >= op_type) {
@@ -280,7 +295,7 @@ int find_major(int p, int q) {
   return ret;
 }
 
-word_t expr(char *e, bool *success) {
+int32_t expr(char *e, bool *success) {
   if (!make_tokens(e)) {
     *success = false;
     return 0;

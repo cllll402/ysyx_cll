@@ -20,6 +20,9 @@
 #include <assert.h>
 #include <string.h>
 
+#define MAX_LEN 32
+
+int expr_len = 0;
 static char buf[65536] = {};
 static char code_buf[65536 + 128] = {}; 
 
@@ -40,13 +43,15 @@ static int choose(int max) {
 static void gen(char c) {
 	char str[2] = {c, '\0'};
 	strcat(buf, str);  
+	expr_len++;
 }
 
 static void gen_rand_num() {
-	int num = choose(100);
+	int num = choose(1000);
 	char str[12];
 	snprintf(str,sizeof(str),"%d",num);
 	strcat(buf, str);
+	expr_len++;
 }
 
 static void gen_rand_op() {
@@ -67,16 +72,22 @@ static void gen_rand_op() {
 	gen('/');
     break;
   }
+  expr_len++;
 }
 
 static void gen_rand_expr() {
-	
-    switch (choose(3)) {
+    switch (choose(4)) {
 		case 0: 
 		gen_rand_num(); 
 		break;
 		
 		case 1:
+		gen_rand_num();
+		gen_rand_op(); 
+		gen_rand_num();
+		break;
+		
+		case 2:
 		gen('('); 
 		gen_rand_expr(); 
 		gen(')'); 
@@ -90,7 +101,13 @@ static void gen_rand_expr() {
     }
 }
 
-void gen_expr_result(){
+void reset_expr(){
+	expr_len = 0;
+	buf[0] = '\0';
+	gen_rand_expr();
+}
+
+void get_expr_result(){
 	FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input","r");
 	
 	if (fp == NULL) {
@@ -109,16 +126,10 @@ void gen_expr_result(){
             e[read - 1] = '\0';
         }
         char *eq_pos = strrchr(e, '=');
-        if (eq_pos == NULL) {
-            printf("Invalid input format\n");
-            continue;
-        }
-
         *eq_pos = '\0';
         result = strtoul(eq_pos + 1, NULL, 10);
-        
-        printf("%s = %ld\n", e,result);
-        fgetc(fp);
+        //目的是提取表达式和计算结果并打印
+        printf("%s = %ld       test \n", e,result);
     }
     fclose(fp);
     if (e) free(e);
@@ -127,41 +138,40 @@ void gen_expr_result(){
 int main(int argc, char *argv[]) {
     
     int ret;
-    uint64_t result;
+    int result;
     int loop = 1;
     int seed = time(0);
     srand(seed);
     
     if (argv[1] == NULL){
-    loop = 10;
+    loop = 20;
     } 
     
     if (argc > 1) {
     sscanf(argv[1], "%d", &loop);
     }
     
-    for (int i = 0; i < loop; i ++) {
+    for (int i = 1; i <=loop; i ++) {
     buf[0] = '\0';
     gen_rand_expr();
-	printf("Expr[%d]: %s\n", i , buf);
-    sprintf(code_buf, code_format, buf);
-    FILE *fp = fopen("/tmp/.code.c", "w");
-    fputs(code_buf, fp);
-    fclose(fp);    //将模板写入缓存区，再将缓存区写入文件code
-    
-    ret = system("gcc /tmp/.code.c -o /tmp/.expr");
-    if (ret != 0) {
-    assert(0);
+    if (expr_len > MAX_LEN){
+    i--;
+    reset_expr();
     }
-    
-    fp = popen("/tmp/.expr", "r");
-    ret = fscanf(fp, "%lu", &result);
-    pclose(fp);    //如果执行编译失败，则跳过执行后面的命令
-    
-    remove("/tmp/.code.c");
-	remove("/tmp/.expr");
-	gen_expr_result();
-	
+		else{
+		sprintf(code_buf, code_format, buf);
+		FILE *fp = fopen("/tmp/.code.c", "w");
+		fputs(code_buf, fp);
+		fclose(fp);    //将模板写入缓存区，再将缓存区写入文件code
+		
+		ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+		if (ret != 0) {assert(0);}
+		
+		fp = popen("/tmp/.expr", "r");
+		ret = fscanf(fp, "%d", &result);
+		printf("Expr[%d]:%s=%d\n",i, buf, result);
+		pclose(fp);
+		}
     }
     return 0;
 }

@@ -13,23 +13,16 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#include <isa.h>
-#include "local-include/reg.h"
+#ifndef __WATCHPOINT_H__
+#define __WATCHPOINT_H__
 
-const char *regs[] = {
-    "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
-    "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
-    "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-    "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
-};
+#include <common.h>
 
-void isa_reg_display() {
-	for (int i = 0; i<32;i++){
-	printf("reg[i]:%s\n",regs[i]);
-	}
-}
+#define NR_WP 32
 
-word_t isa_reg_str2val(const char *s, bool *success) {
-	
-    return 0;
-}
+void init_wp_pool();
+void remove_wp(int N);
+void create_wp(char *expr,uint32_t result);
+void trace_and_difftest();
+
+#endif

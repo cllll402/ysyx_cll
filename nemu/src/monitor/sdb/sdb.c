@@ -20,7 +20,8 @@
 #include "expr.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/isa/riscv32/local-include/reg.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/include/memory/vaddr.h"
-
+#include "/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/gen_expr.h"
+#include "watchpoint.h"
 
 #define NR_CMD ARRLEN(cmd_table)
 
@@ -35,7 +36,7 @@ void init_regex();
 void init_wp_pool();
 void isa_reg_display();
 void test_comparison();
- 
+
 static int is_batch_mode = false;
 static int cmd_c(char *args);
 static int cmd_q(char *args);
@@ -44,10 +45,10 @@ static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
 static int cmd_p(char *args);
-//static int cmd_w(char *args);
-//static int cmd_d(char *args);
+static int cmd_w(char *args);
+static int cmd_d(char *args);
 
-static struct {
+struct {
   const char *name;
   const char *description;
   int (*handler) (char *);
@@ -61,8 +62,8 @@ cmd_table [] = {
   { "info", "Print", cmd_info},
   { "x", "Scan", cmd_x },
   { "p", "Caculate", cmd_p },
- // { "w", "Watch", cmd_w },
- // { "d", "Delite", cmd_d }
+  { "w", "Watch", cmd_w },
+  { "d", "Delite", cmd_d }
 };
 
 static int cmd_c(char *args) {
@@ -120,16 +121,19 @@ static int cmd_info(char *args){
 	char *arg = strtok(NULL, " ");
 
     if (arg == NULL) {
-        printf("You need to input r/w\n");
+    printf("You need to input r/w\n");
     }
+    
     else if (strcmp(arg, "r") == 0) {
-        printf("Display the reg information\n");
-        isa_reg_display();
+    printf("Display the reg information\n");
+    isa_reg_display();
     }
+    
     else if (strcmp(arg, "w") == 0) {
-        printf("Display the watchpoint information\n");
-        // isa_watchpoint_display();
+    printf("Display the watchpoint information\n");
+    trace_and_difftest();
     }
+    
     else {
         printf("You need to input r/w\n");
     }
@@ -171,7 +175,7 @@ static int cmd_p(char *args){
 	
 	init_regex();
 	
-	char e[256];
+	char e[512];
 	bool success = false;
 	char *arg = strtok(NULL, " ");
 	
@@ -183,16 +187,48 @@ static int cmd_p(char *args){
     strncpy(e, arg, sizeof(e)-1);
 	e[sizeof(e)-1]= '\0';
     }
-    word_t result = expr(e,&success);
+    word_t result = expr(e,&success);      
     if (success) {
     printf("\033[1;31mThe final result is :%d \033[0m \n",result);
     }
     else {
-    printf("\033[1;31mThe fomula is error\033[0m \n");
+    printf("\033[1;31mThe fomula is illegality\033[0m \n");
+    printf("\033[1;31mAnd if you want to type the minus nad pointer, you need to take the parens!\033[0m \n");
     }
 	return 0;
 }
 
+static int cmd_w(char *args){
+
+	char *arg = strtok(NULL, " ");
+
+	if (arg == NULL) {
+	printf("You need to input args EXPR\n");
+	}
+
+	else {
+	bool success;
+	word_t result = expr(args,&success);
+	create_wp(args,result);
+	} 
+	
+	return 0;
+}
+
+static int cmd_d(char *args){
+
+	char *arg = strtok(NULL, " ");
+
+	if (arg == NULL) {
+	printf("You need to input args N\n");
+	}
+	
+	else {
+	int N = atoi(arg);
+	remove_wp(N);
+	} 
+	return 0;
+}
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
   static char *line_read = NULL;
@@ -256,52 +292,57 @@ void sdb_mainloop() {
 }
 
 void test_comparison() {
+    FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input", "r");
 
-    FILE *fp = fopen("/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/build/input","r");
-	
-	if (fp == NULL) {
-    printf("\033[31mCan't find the file\033[0m\n");
-    return;
+    if (fp == NULL) {
+        printf("\033[31mFailed to open file\033[0m\n");
+        return;
     }
-    
+
     char *e = NULL;
-    size_t len_e = 0;
+    size_t len = 0;
     int32_t result;
     ssize_t read;
+    bool success = false;
 
-    while ((read = getline(&e, &len_e, fp)) != -1) {
-
+    while ((read = getline(&e, &len, fp)) != -1) {
         if (read > 0 && e[read - 1] == '\n') {
             e[read - 1] = '\0';
         }
 
-        char *eq_pos = strrchr(e, '=');
-        *eq_pos = '\0';
-        result = strtoul(eq_pos + 1, NULL, 10);
-        
-        printf("%s = %ld\n", e,result);
-        fgetc(fp);
+        char *equal_pos = strchr(e, '=');
+        char *colon_pos = strchr(e, ':');
+
+        *equal_pos = '\0';
+        result = strtoull(equal_pos + 1, NULL, 10);
+
+        // 计算表达式的长度并分配内存
+        size_t expr_length = equal_pos - colon_pos - 1;
+        char *expr_str = (char *)malloc(expr_length + 1);
+
+        // 复制表达式
+        strncpy(expr_str, colon_pos + 1, expr_length);
+        expr_str[expr_length] = '\0';
+
+        // 计算表达式结果
+        int32_t expr_result = expr(expr_str, &success);
+        if (result != expr_result) {
+        printf("\033[31mExpected: %d, Got: %d\n\033[0m", result, expr_result);
+        } 
+        else {
+        printf("\033[32mThe test is right. The final value is %d\n\033[0m", result);
+        }
+        free(expr_str);
     }
-    word_t expr_result = expr(e,&success);
-    
-    if (result != expr_result) {
-	printf("Expected: %d, Got: %d\n", expr_result, result);
-	assert(0);
-	}
-		
-	else {
-	printf("The test is right.The final value is %d\n",result);
-	}
-	
     fclose(fp);
-    if (e) free(e); 
- } 
+    if (e) free(e);
+}
+
 
 void init_sdb() {
     /* Compile the regular expressions. */
     init_regex();
     /* Initialize the watchpoint pool. */
     init_wp_pool();
-    test_comparison();
+    //test_comparison();
 }
-
