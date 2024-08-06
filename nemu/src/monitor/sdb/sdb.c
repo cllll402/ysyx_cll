@@ -27,6 +27,7 @@
 
 #define PMEM_START 0x80000000
 #define PMEM_END   0x87FFFFFF
+#define PMEM_SIZE  0x08000000
 //明确一下pmen的地址范围
 
 typedef uint32_t vaddr_t;
@@ -131,44 +132,52 @@ static int cmd_info(char *args){
     
     else if (strcmp(arg, "w") == 0) {
     printf("Display the watchpoint information\n");
-    trace_and_difftest();
+    isa_watchpoint_display();
     }
     
     else {
-        printf("You need to input r/w\n");
+    printf("You need to input r/w\n");
     }
 	return 0;
 }
 
-static int cmd_x(char *args){
+static int cmd_x(char* args) {
+    if (args == NULL) {
+        printf("No arguments provided\n");
+        printf("Example: x N EXPR\n");
+        return 0;
+    }
 
-	char *arg1 = strtok(NULL, " ");
-	char *arg2 = strtok(NULL, " ");
-    
-	if (arg1 == NULL || arg2 == NULL){
-		printf("Args number is not enough\n");
-		printf("Example:x N EXPR\n\n");
-		
-		printf("PS:PMEM_START 0x80000000\n   PMEM_END   0x87FFFFFF\n");
-		return 0;
-	}
+    uint32_t addr = 0;
+    int32_t len = 0;
+    char *len_str = strtok(args, " ");
+    char *expr_str = strtok(NULL, "");
 
-	int N = strtol(arg1,NULL,10);
-    vaddr_t EXPR = strtol(arg2,NULL,16);
-    //这里的strtol将字符串转换为长整数型
-    //第一个参数为转换目标，第二个参数默认为NULL，第三个参数为进制
-    
-	for (int i = 0; i < N;) {
-			printf("%#010x: ", EXPR);
-			
-			for (int j = 0; i < N && j < 4; i++, j++) {
-				word_t w = vaddr_read(EXPR, 4);
-				EXPR += 4;
-				printf("%#010x ", w);
-			}
-		puts("");
-	}
-	return 0;
+    len = atoi(len_str);  // 将长度字符串转换为整数
+    bool success = true;
+    addr = expr(expr_str, &success);
+	if (!success) {
+        printf("Failed to evaluate expression: %s\n", expr_str);
+        return 0;
+    }
+	addr += PMEM_START;
+    if (addr < PMEM_START || addr >= PMEM_START + PMEM_SIZE) {
+        printf("Address 0x%x is out of bound of pmem [0x%x, 0x%x]\n", addr, PMEM_START, PMEM_START + PMEM_SIZE - 1);
+        return 0;
+    }
+
+    printf("Scanning %d 4-byte units starting from address 0x%x\n", len, addr);
+
+    for (int32_t i = 0; i < len; i++) {
+        if (addr >= PMEM_START + PMEM_SIZE) {
+        printf("Address 0x%x is out of bound of pmem [0x%x, 0x%x]\n", addr, PMEM_START, PMEM_START + PMEM_SIZE - 1);
+        return 0;
+        }
+        uint32_t data = vaddr_read(addr, 4); 
+        printf("Addr: 0x%08x   Data: 0x%08x\n", addr, data);
+        addr += 4;
+    }
+    return 0;
 }
 
 static int cmd_p(char *args){
@@ -193,7 +202,7 @@ static int cmd_p(char *args){
     }
     else {
     printf("\033[1;31mThe fomula is illegality\033[0m \n");
-    printf("\033[1;31mAnd if you want to type the minus nad pointer, you need to take the parens!\033[0m \n");
+    printf("\033[1;31mAnd if you want to type the minus and pointer, you need to take the parens!\033[0m \n");
     }
 	return 0;
 }
@@ -324,7 +333,6 @@ void test_comparison() {
         strncpy(expr_str, colon_pos + 1, expr_length);
         expr_str[expr_length] = '\0';
 
-        // 计算表达式结果
         int32_t expr_result = expr(expr_str, &success);
         if (result != expr_result) {
         printf("\033[31mExpected: %d, Got: %d\n\033[0m", result, expr_result);

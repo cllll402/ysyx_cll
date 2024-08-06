@@ -20,9 +20,23 @@
 
 #define NR_WP 32
 
+typedef struct watchpoint {
+    int NO;
+    char expr[256];
+    uint32_t result;
+    uint32_t old_result;  
+    bool flag; 
+    struct watchpoint *next;
+} WP;
+
+extern WP wp_pool[NR_WP];
+
 void init_wp_pool();
-void remove_wp(int N);
+WP *new_wp(char *expr,uint32_t result);
+void free_wp(WP *wp);
 void create_wp(char *expr,uint32_t result);
-void trace_and_difftest();
+void remove_wp(int N);
+void isa_watchpoint_display();
+
 
 #endif

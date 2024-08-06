@@ -42,7 +42,10 @@ run: $(BIN)
 
 all: $(BIN)
 
+sim:
+	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
+	
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: default run all clean
+.PHONY: default run all sim clean
