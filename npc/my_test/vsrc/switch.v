@@ -1,5 +1,5 @@
 
-module test(
+module switch(
   input a,
   input b,
   output f

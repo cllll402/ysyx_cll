@@ -58,9 +58,13 @@ void Vswitch::eval_step() {
         Vswitch___024root___eval_initial(&(vlSymsp->TOP));
         Vswitch___024root___eval_settle(&(vlSymsp->TOP));
     }
+    // MTask 0 start
+    VL_DEBUG_IF(VL_DBG_MSGF("MTask0 starting\n"););
+    Verilated::mtaskId(0);
     VL_DEBUG_IF(VL_DBG_MSGF("+ Eval\n"););
     Vswitch___024root___eval(&(vlSymsp->TOP));
     // Evaluate cleanup
+    Verilated::endOfThreadMTask(vlSymsp->__Vm_evalMsgQp);
     Verilated::endOfEval(vlSymsp->__Vm_evalMsgQp);
 }
 
@@ -94,9 +98,9 @@ VL_ATTR_COLD void Vswitch::final() {
 
 const char* Vswitch::hierName() const { return vlSymsp->name(); }
 const char* Vswitch::modelName() const { return "Vswitch"; }
-unsigned Vswitch::threads() const { return 8; }
+unsigned Vswitch::threads() const { return 1; }
 std::unique_ptr<VerilatedTraceConfig> Vswitch::traceConfig() const {
-    return std::unique_ptr<VerilatedTraceConfig>{new VerilatedTraceConfig{true, false, false}};
+    return std::unique_ptr<VerilatedTraceConfig>{new VerilatedTraceConfig{false, false, false}};
 };
 
 //============================================================

@@ -1,4 +1,4 @@
-#include "Vtest.h"
+#include "Vswitch.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 
@@ -10,9 +10,9 @@ int main(int argc, char** argv) {
 	
         VerilatedContext* contextp = new VerilatedContext;
     	contextp->commandArgs(argc, argv);
-   	contextp->traceEverOn(true);
+   		contextp->traceEverOn(true);
    	
-        Vtest* top = new Vtest{contextp};
+        Vswitch* top = new Vswitch{contextp};
         VerilatedVcdC* wave_trace = new VerilatedVcdC;
         
         top->trace(wave_trace,5);
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 		assert(top->f == (a ^ b));
         }
         wave_trace->close();
-	delete top;
+		delete top;
         delete contextp;
         delete wave_trace;
         return 0;

@@ -14,7 +14,6 @@ Vswitch__Syms::Vswitch__Syms(VerilatedContext* contextp, const char* namep, Vswi
     : VerilatedSyms{contextp}
     // Setup internal state of the Syms class
     , __Vm_modelp{modelp}
-    , __Vm_threadPoolp{static_cast<VlThreadPool*>(contextp->threadPoolp())}
     // Setup module instances
     , TOP{this, namep}
 {

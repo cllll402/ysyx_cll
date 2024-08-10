@@ -6,7 +6,6 @@
 #define VERILATED_VSWITCH___024ROOT_H_  // guard
 
 #include "verilated.h"
-#include "verilated_threads.h"
 
 class Vswitch__Syms;
 
