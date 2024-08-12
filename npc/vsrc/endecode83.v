@@ -15,10 +15,12 @@ module endecode83(en,x,sign,y);
 				8'b000001?? : y = 3'b010;
 				8'b0000001? : y = 3'b001;
 				8'b00000001 : y = 3'b000;
-				default : y = 3'b111;
+				default : y = 3'b000;
 			endcase
 		end
-		else y = 3'b111; 
+		else begin 
+		y = 3'b000; 
+		end
 	end
 endmodule
 

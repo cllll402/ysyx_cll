@@ -2,12 +2,12 @@ module top(
     input clk,
     input rst,
     input btn,
-    input [10:0] sw,
+    input [15:0] sw,
     input ps2_clk,
     input ps2_data,
     input uart_rx,
     output uart_tx,
-    output [7:0] ledr,
+    output [15:0] ledr,
     output VGA_CLK,
     output VGA_HSYNC,
     output VGA_VSYNC,
@@ -51,6 +51,12 @@ bcd7hex my_bcd7low(
 );
 
 assign ledr[7:0] = {lfsr_high, lfsr_low};
+assign seg2 = 8'b11111111;
+assign seg3 = 8'b11111111;
+assign seg4 = 8'b11111111;
+assign seg5 = 8'b11111111;
+assign seg6 = 8'b11111111;
+assign seg7 = 8'b11111111;
 */
 
 /* 4位带符号加法器 
@@ -63,7 +69,7 @@ alu_4bit my_alu_4bit(
 	.overflow(ledr[5]),
 	.carry(ledr[6])
 );
-*/
+*/ //带修改存在错误
 
 /* 8-3优先编码器与七段数码管 
 wire [2:0] decode_bcd;
@@ -79,15 +85,16 @@ bcd7seg  my_bcd7seg(
 	.b(decode_bcd),
 	.h(seg0)
 );
+assign ledr[6:4] = decode_bcd;
 */
 
-/* 二位四选一选择器
+/* 二位四选一选择器 
 mux42 my_mux42(
 	.x0(sw[15:14]),
 	.x1(sw[13:12]),
 	.x2(sw[11:10]),
 	.x3(sw[9:8]),
-	.y(sw[7:6]),
+	.y(sw[1:0]),
 	.f(ledr[1:0])
 );
 */
@@ -100,6 +107,14 @@ switch  my_switch(
 );
 */
 
+/* 流水灯 */
+light my_light(
+	.clk(clk),
+	.rst(sw[0]),
+	.led(ledr)
+);
+
+
 /*  
 led my_led(
     .clk(clk),
@@ -110,6 +125,7 @@ led my_led(
 );
 */
 
+/*
 vga_ctrl my_vga_ctrl(
     .pclk(clk),
     .reset(rst),
@@ -123,65 +139,88 @@ vga_ctrl my_vga_ctrl(
     .vga_g(VGA_G),
     .vga_b(VGA_B)
 );
+*/
 
-/* 状态机及键盘 */
-wire [3:0] seg0_low;
-wire [3:0] seg0_high;
-wire [3:0] seg1_low;
-wire [3:0] seg1_high;
-wire [3:0] seg1_low_ascii;
-wire [3:0] seg1_high_ascii;
-wire [3:0] seg2_low;
-wire [3:0] seg2_high;
-
-keyboard my_keyboard(
+/* 状态机及键盘 
+wire next;
+wire over;
+wire segen;
+wire ready;
+wire [7:0] out;
+wire [7:0] ascii;
+wire [23:0] segin;
+wire [3:0] countlow; 
+wire [3:0] counthigh;
+  
+fsm my_fsm(
     .clk(clk),
-    .resetn(sw[0]),
-    .ps2_clk(ps2_clk),
-    .ps2_data(ps2_data),
-    .seg0({seg0_low,seg0_high}),
-    .seg1({seg1_low,seg1_high}),
-    .seg2({seg2_low,seg2_high})
+    .rst(sw[0]),
+    .ready(ready),
+    .out(out),
+    .next(next),
+    .segin(segin),
+    .segen(segen),
+    .countlow(countlow),
+    .counthigh(counthigh)
+);
+
+ps2_keyboard my_ps2keyboard(
+	.clk(clk),
+	.clrn(~rst), 
+	.ps2_clk(ps2_clk),
+	.ps2_data(ps2_data),
+	.data(out),
+	.ready(ready),
+	.nextdata_n(next),
+	.overflow(over)
 );
 
 keycode_to_ascii my_keycode_to_ascii(
-	.x({seg1_low,seg1_high}),
-	.y({seg1_low_ascii,seg1_high_ascii})
+	.x(segin[7:0]),
+	.y(ascii[7:0])
 );
 
-bcd7hex my_bcd7hex_seg0_low(
-	.x(seg0_low),
-	.y(seg1)
-);
-
-bcd7hex my_bcd7hex_seg0_high(
-	.x(seg0_high),
+enbcd7hex my_enbcd7hex0_low(
+	.en(segen),
+	.x(segin[3:0]),
 	.y(seg0)
 );
 
-bcd7hex my_bcd7hex_seg1_low(
-	.x(seg1_low_ascii),
-	.y(seg4)
+enbcd7hex my_enbcd7hex1_high(
+	.en(segen),
+	.x(segin[7:4]),
+	.y(seg1)
 );
 
-bcd7hex my_bcd7hex_seg1_high(
-	.x(seg1_high_ascii),
+enbcd7hex my_enbcd7hex2_low(
+	.en(segen),
+	.x(ascii[3:0]),
 	.y(seg3)
 );
 
-bcd7 my_bcd7_seg2_low(
-	.x(seg2_low),
-	.y(seg7)
+enbcd7hex my_enbcd7hex3_high(
+	.en(segen),
+	.x(ascii[7:4]),
+	.y(seg4)
 );
 
-bcd7 my_bcd7_seg2_high(
-	.x(seg2_high),
+enbcd7 my_enbcd7_low(
+	.en(1'b1),
+	.x(countlow),
 	.y(seg6)
+);
+
+enbcd7 my_enbcd7_high(
+	.en(1'b1),
+	.x(counthigh),
+	.y(seg7)
 );
 assign seg2 = 8'b11111111;
 assign seg5 = 8'b11111111;
+*/
 
-/* seg my_seg(
+/* 
+seg my_seg(
     .clk(clk),
     .rst(rst),
     .o_seg0(seg0),
@@ -193,7 +232,6 @@ assign seg5 = 8'b11111111;
     .o_seg6(seg6),
     .o_seg7(seg7)
 );
-*/
 
 vmem my_vmem(
     .h_addr(h_addr),
@@ -205,7 +243,7 @@ uart my_uart(
   .tx(uart_tx),
   .rx(uart_rx)
 );
-
+*/
 endmodule
 
 
