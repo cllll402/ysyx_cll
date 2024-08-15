@@ -1,4 +1,4 @@
-TOPNAME = switch
+TOPNAME = light
 
 VERILATOR = verilator
 VERILATOR_CFLAGS += --build --cc --exe -Wall --trace

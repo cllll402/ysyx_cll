@@ -107,13 +107,13 @@ static int cmd_si(char *args){
 	if (arg == NULL) {
 		N=1;
 		cpu_exec(N);
-		printf("Command excuted %d time",N);
+		printf("Command excuted %d time\n",N);
 	}
 	
 	else {
 		N = atoi(arg);
 		cpu_exec(N);
-		printf("Command excuted %d times",N);
+		printf("Command excuted %d times\n",N);
 	} 
 	return 0;
 }
@@ -198,7 +198,8 @@ static int cmd_p(char *args){
     }
     word_t result = expr(e,&success);      
     if (success) {
-    printf("\033[1;31mThe final result is :%d \033[0m \n",result);
+    printf("\033[1;31mThe final result is : %d \033[0m \n",result);
+    printf("\033[1;31mThe final result is : 0x%08x \033[0m \n",result);
     }
     else {
     printf("\033[1;31mThe fomula is illegality\033[0m \n");
@@ -335,7 +336,7 @@ void test_comparison() {
 
         int32_t expr_result = expr(expr_str, &success);
         if (result != expr_result) {
-        printf("\033[31mExpected: %d, Got: %d\n\033[0m", result, expr_result);
+        printf("\033[31mThe test %s is error. Divid zero exception can not  be calculated.\n", expr_str);
         } 
         else {
         printf("\033[32mThe test is right. The final value is %d\n\033[0m", result);
@@ -352,5 +353,6 @@ void init_sdb() {
     init_regex();
     /* Initialize the watchpoint pool. */
     init_wp_pool();
+    /* Caculate test. */
     //test_comparison();
 }

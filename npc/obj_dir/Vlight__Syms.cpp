@@ -1,16 +1,16 @@
 // Verilated -*- C++ -*-
 // DESCRIPTION: Verilator output: Symbol table implementation internals
 
-#include "Vswitch__Syms.h"
-#include "Vswitch.h"
-#include "Vswitch___024root.h"
+#include "Vlight__Syms.h"
+#include "Vlight.h"
+#include "Vlight___024root.h"
 
 // FUNCTIONS
-Vswitch__Syms::~Vswitch__Syms()
+Vlight__Syms::~Vlight__Syms()
 {
 }
 
-Vswitch__Syms::Vswitch__Syms(VerilatedContext* contextp, const char* namep, Vswitch* modelp)
+Vlight__Syms::Vlight__Syms(VerilatedContext* contextp, const char* namep, Vlight* modelp)
     : VerilatedSyms{contextp}
     // Setup internal state of the Syms class
     , __Vm_modelp{modelp}

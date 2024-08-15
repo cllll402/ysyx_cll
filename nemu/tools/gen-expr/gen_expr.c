@@ -47,7 +47,7 @@ static void gen(char c) {
 }
 
 static void gen_rand_num() {
-	int num = choose(1000);
+	int num = choose(100);
 	char str[12];
 	snprintf(str,sizeof(str),"%d",num);
 	strcat(buf, str);
@@ -76,7 +76,7 @@ static void gen_rand_op() {
 }
 
 static void gen_rand_expr() {
-    switch (choose(4)) {
+    switch (choose(5)) {
 		case 0: 
 		gen_rand_num(); 
 		break;
@@ -85,11 +85,25 @@ static void gen_rand_expr() {
 		gen_rand_num();
 		gen_rand_op(); 
 		gen_rand_num();
+		gen_rand_op(); 
+		gen_rand_num();
+		gen_rand_op(); 
+		gen_rand_num();
 		break;
 		
 		case 2:
 		gen('('); 
 		gen_rand_expr(); 
+		gen(')'); 
+		break;
+		
+		case 3:
+		gen('('); 
+		gen_rand_num();
+		gen_rand_op(); 
+		gen_rand_expr(); 
+		gen_rand_op(); 		
+		gen_rand_num();
 		gen(')'); 
 		break;
 		

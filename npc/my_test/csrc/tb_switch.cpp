@@ -2,7 +2,7 @@
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 
-#define MAX_TIME 20
+#define MAX_TIME 500
 
 vluint64_t sim_time = 0;
 

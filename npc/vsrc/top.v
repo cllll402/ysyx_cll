@@ -69,7 +69,7 @@ alu_4bit my_alu_4bit(
 	.overflow(ledr[5]),
 	.carry(ledr[6])
 );
-*/ //带修改存在错误
+*/
 
 /* 8-3优先编码器与七段数码管 
 wire [2:0] decode_bcd;

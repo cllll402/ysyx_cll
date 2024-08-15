@@ -77,7 +77,7 @@ void create_wp(char *expr,uint32_t result){
 	WP *wp = new_wp(expr,result);
 	strcpy(wp->expr,expr);
 	wp->old_result = result;
-	printf("The NO.%d watchpoint has been created\n",wp->NO);
+	printf("The NO.%d watchpoint has been created at address:%p \n",wp->NO, (void*)wp);
 }
 
 void remove_wp(int N){
@@ -99,11 +99,11 @@ void isa_watchpoint_display(){
  	bool set_flag = false;
 	for (int i = 0; i < NR_WP; i ++){
 		if (wp_pool[i].flag) { 
-		printf("The NO.%d %s Old_result:%d New_result:%d\n", wp_pool[i].NO, wp_pool[i].expr, wp_pool[i].old_result, wp_pool[i].result);
+		printf("The NO.%d %s Address:%p Old_result:%x New_result:%x\n", wp_pool[i].NO, wp_pool[i].expr, (void *)&wp_pool[i], wp_pool[i].old_result, wp_pool[i].result);
 		set_flag = true;
 		} 
 	}		
 	if (set_flag == false) {
-	printf("\033[031mThere is no watchpoint\033[0m\n");
+	printf("\033[1;031mThere is no watchpoint\033[0m\n");
 	}
 }

@@ -198,17 +198,18 @@ int32_t eval(int p, int q, bool *check) {
 	    if (op < 0) {
 	    assert(0);
 	    }
-			if (tokens[op].type == TK_NEG){
-			return ret = -eval(p + 1, q, check);
-			}
-			if (tokens[op].type == TK_POS){
-			return ret = eval(p + 1, q, check);
-			}
-			if (tokens[p].type == TK_PTR){
-			vaddr_t addr = strtoul(tokens[p + 1].str, NULL,16); 
-			printf("the addr 0x%x\n",addr);
-			return vaddr_read(addr, 4);
-			}
+		if (tokens[op].type == TK_NEG){
+		return ret = -eval(p + 1, q, check);
+		}
+		if (tokens[op].type == TK_POS){
+		return ret = eval(p + 1, q, check);
+		}
+		if (tokens[op].type == TK_PTR) {
+		vaddr_t addr = eval(op + 1, q, check);
+		printf("the addr 0x%x\n", addr);
+		return vaddr_read(addr, 4); 
+		}
+
 	    word_t val1 = eval(p, op-1, check);
 	    if (!*check) return 0;
 	    word_t val2 = eval(op+1, q, check);
