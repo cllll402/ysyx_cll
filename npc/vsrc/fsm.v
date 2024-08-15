@@ -9,10 +9,10 @@ module fsm(
     output reg [3:0] countlow,
     output reg [3:0] counthigh
 );
-	parameter READ  = 4'b0001;
-	parameter REACH = 4'b0010; 
-	parameter DELAY = 4'b0100;
-	parameter IDLE  = 4'b1000;
+	parameter READ     = 4'b0001;
+	parameter COMPLETE = 4'b0010; 
+	parameter DELAY    = 4'b0100;
+	parameter IDLE     = 4'b1000;
 	reg [3:0] state_current;
 	reg [3:0] state_next;
 
@@ -31,9 +31,9 @@ always @ (*) begin
 		state_next = (ready == 1'b1) ? READ : IDLE;
 		end
 		READ: begin
-		state_next = REACH;
+		state_next = COMPLETE;
 		end
-		REACH: begin
+		COMPLETE: begin
 		state_next = DELAY;
 		end
 		DELAY: begin
@@ -50,7 +50,7 @@ always @ (posedge clk) begin
 		IDLE: begin
 		next <= 1;
 		end
-		REACH: begin
+		COMPLETE: begin
 		next <= 0;
 		end
 		DELAY: begin
