@@ -99,7 +99,7 @@ void isa_watchpoint_display(){
  	bool set_flag = false;
 	for (int i = 0; i < NR_WP; i ++){
 		if (wp_pool[i].flag) { 
-		printf("The NO.%d %s Address:%p Old_result:%x New_result:%x\n", wp_pool[i].NO, wp_pool[i].expr, (void *)&wp_pool[i], wp_pool[i].old_result, wp_pool[i].result);
+		printf("NO.%d   %s   %p   Old_result:%x   New_result:%x\n", wp_pool[i].NO, wp_pool[i].expr, (void *)&wp_pool[i], wp_pool[i].old_result, wp_pool[i].result);
 		set_flag = true;
 		} 
 	}		

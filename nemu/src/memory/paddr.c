@@ -50,16 +50,31 @@ void init_mem() {
   Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
 }
 
+void read_mtrace(paddr_t addr, int len) {
+	FILE *file = fopen("mtrace_output.log", "a");  
+    fprintf(file, "Paddr_read  at  " FMT_PADDR "  len=%d\n", addr, len);
+    fclose(file);
+    printf("Paddr_read  at  " FMT_PADDR "  len=%d\n", addr, len);
+}
+
+void write_mtrace(paddr_t addr, int len, word_t data) {
+    FILE *file = fopen("mtrace_output.log", "a");  
+    fprintf(file, "Paddr_write at  " FMT_PADDR "  len=%d  data=" FMT_WORD "\n", addr, len, data);
+    fclose(file);
+	printf("\033[31mPaddr_write at  " FMT_PADDR "  len=%d  data=\033[31m" FMT_WORD "\033[0m\n", addr, len, data);
+}
+
 word_t paddr_read(paddr_t addr, int len) {
-  if (likely(in_pmem(addr))) return pmem_read(addr, len);
-  IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
-  //两种情况，一种是物理内存，另一种是设备寄存器
-  out_of_bound(addr);
-  return 0;
+	IFDEF(CONFIG_MTRACE, read_mtrace(addr, len));
+	if (likely(in_pmem(addr))) return pmem_read(addr, len);
+	IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));//两种情况，一种是物理内存，另一种是设备寄存器
+	out_of_bound(addr);
+	return 0;
 }
 
 void paddr_write(paddr_t addr, int len, word_t data) {
-  if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
-  IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
-  out_of_bound(addr);
+	IFDEF(CONFIG_MTRACE, write_mtrace(addr, len, data));
+	if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
+	IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
+	out_of_bound(addr);
 }

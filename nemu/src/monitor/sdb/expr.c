@@ -146,7 +146,6 @@ static bool make_tokens(char *e) {
             }
         }
         if (i == NR_REGEX) {
-        printf("There is something that cannot be matched\n");
         return false;
         }
     }

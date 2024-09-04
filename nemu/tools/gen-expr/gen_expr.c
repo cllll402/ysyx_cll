@@ -47,7 +47,7 @@ static void gen(char c) {
 }
 
 static void gen_rand_num() {
-	int num = choose(100);
+	int num = choose(199);
 	char str[12];
 	snprintf(str,sizeof(str),"%d",num);
 	strcat(buf, str);
@@ -79,9 +79,13 @@ static void gen_rand_expr() {
     switch (choose(5)) {
 		case 0: 
 		gen_rand_num(); 
+		gen_rand_op(); 
+		gen_rand_num();
 		break;
 		
 		case 1:
+		gen_rand_num();
+		gen_rand_op(); 
 		gen_rand_num();
 		gen_rand_op(); 
 		gen_rand_num();
@@ -158,7 +162,7 @@ int main(int argc, char *argv[]) {
     srand(seed);
     
     if (argv[1] == NULL){
-    loop = 20;
+    loop = 100;
     } 
     
     if (argc > 1) {
@@ -176,10 +180,10 @@ int main(int argc, char *argv[]) {
 		sprintf(code_buf, code_format, buf);
 		FILE *fp = fopen("/tmp/.code.c", "w");
 		fputs(code_buf, fp);
-		fclose(fp);    //将模板写入缓存区，再将缓存区写入文件code
+		fclose(fp);   
 		
-		ret = system("gcc /tmp/.code.c -o /tmp/.expr");
-		if (ret != 0) {assert(0);}
+		ret = system("gcc -Wall -Werror /tmp/.code.c -o /tmp/.expr");
+		if (ret != 0) {i--;continue;}
 		
 		fp = popen("/tmp/.expr", "r");
 		ret = fscanf(fp, "%d", &result);

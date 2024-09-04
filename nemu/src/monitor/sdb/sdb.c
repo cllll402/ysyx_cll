@@ -18,10 +18,10 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "expr.h"
+#include "watchpoint.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/isa/riscv32/local-include/reg.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/include/memory/vaddr.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/tools/gen-expr/gen_expr.h"
-#include "watchpoint.h"
 
 #define NR_CMD ARRLEN(cmd_table)
 
@@ -198,12 +198,11 @@ static int cmd_p(char *args){
     }
     word_t result = expr(e,&success);      
     if (success) {
-    printf("\033[1;31mThe final result is : %d \033[0m \n",result);
-    printf("\033[1;31mThe final result is : 0x%08x \033[0m \n",result);
+	printf("\033[1;31mThe final decimal result is : %d \033[0m \n", result);
+	printf("\033[1;31mThe final hex result is : %08x \033[0m \n", result);
     }
     else {
     printf("\033[1;31mThe fomula is illegality\033[0m \n");
-    printf("\033[1;31mAnd if you want to type the minus and pointer, you need to take the parens!\033[0m \n");
     }
 	return 0;
 }
@@ -336,7 +335,7 @@ void test_comparison() {
 
         int32_t expr_result = expr(expr_str, &success);
         if (result != expr_result) {
-        printf("\033[31mThe test %s is error. Divid zero exception can not  be calculated.\n", expr_str);
+        printf("\033[31mThe test %s is error. Please check now!\n", expr_str);
         } 
         else {
         printf("\033[32mThe test is right. The final value is %d\n\033[0m", result);
@@ -355,4 +354,5 @@ void init_sdb() {
     init_wp_pool();
     /* Caculate test. */
     //test_comparison();
+    
 }
