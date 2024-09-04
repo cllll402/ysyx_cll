@@ -53,7 +53,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
             if (success) {
                 if (tmp != wp_pool[i].old_result) {
                     nemu_state.state = NEMU_STOP;  
-                    printf("Watchpoint NO.%d %s Address: %p Old result: %d --> New result: %d\n", i, wp_pool[i].expr, (void*)&wp_pool[i],  wp_pool[i].old_result, tmp);
+                    printf("\033[1;31mWatchpoint NO.%d %s Address: %p 	\nOld result: %x --> New result: %x\033[0m\n", i, wp_pool[i].expr, (void*)&wp_pool[i],  wp_pool[i].old_result, tmp);
                     wp_pool[i].old_result = tmp;
                     return;
                 }

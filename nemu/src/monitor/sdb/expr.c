@@ -180,7 +180,7 @@ int32_t eval(int p, int q, bool *check) {
 		} 
 		else if (tokens[p].type == TK_REG) {
 		bool success = false;
-		isa_reg_str2val(tokens[p].str, &success);
+		ret = isa_reg_str2val(tokens[p].str, &success);
 		} 
 		else {
 		assert(0);

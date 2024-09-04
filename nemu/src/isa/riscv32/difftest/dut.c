@@ -20,21 +20,25 @@
 #define NUM_REGS 32
 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
-	for (int i = 0; i < NUM_REGS; i++){
-		if (ref_r->gpr[i] != cpu.gpr[i]){
-		printf("GPR has error at reg %d\n", i);
-		printf("Expected: %x, Actual: %x\n", ref_r->gpr[i], cpu.gpr[i]);
-		return false;
-		}
-	}
-	
-	if (ref_r->pc != cpu.pc){
-		printf("PC has error\n");
-		printf("Expected: %x, Actual: %x\n", ref_r->pc, cpu.pc);
-		return false;
-	}
-	return true;
+    // Check program counter
+    if (ref_r->pc != cpu.pc) {
+        printf("\033[31mPC has error\033[0m\n");
+        printf("\033[31mExpected: %x, Actual: %x\033[0m\n", ref_r->pc, cpu.pc);
+        return false;
+    }
+
+    // Check general purpose registers
+    for (int i = 0; i < NUM_REGS; i++) {
+        if (ref_r->gpr[i] != cpu.gpr[i]) {
+            printf("\033[31mGPR has error at reg %d\033[0m\n", i);
+            printf("\033[31mExpected: %x, Actual: %x\033[0m\n", ref_r->gpr[i], cpu.gpr[i]);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void isa_difftest_attach() {
+    // Functionality to attach differential testing (if needed)
 }

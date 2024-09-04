@@ -26,17 +26,27 @@ const char *regs[] = {
 
 void isa_reg_display() {
 	for (int i = 0; i < 32; i++){
-	printf("reg[%d] %-3s: %d\n", i, regs[i], cpu.gpr[i]);
+	printf("reg[%d] %-3s: %x\n", i, regs[i], cpu.gpr[i]);
 	}
 }  
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+    if (s[0] == '$') {
+        s++;  // 跳过$符号!!!
+    }
+    
+    if (strcmp(s, "0") == 0) {
+        *success = true;
+        return cpu.gpr[0];
+    }
+
     for (int i = 0; i < 32; i++) {
         if (strcmp(s, regs[i]) == 0) {
             *success = true;
-            return cpu.gpr[i]; 
+            return cpu.gpr[i];
         }
     }
+    
     *success = false;
     return 0;
 }
