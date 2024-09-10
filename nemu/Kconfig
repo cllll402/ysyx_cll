@@ -150,7 +150,12 @@ config ITRACE_COND
   depends on ITRACE
   string "Only trace instructions when the condition is true"
   default "true"
-
+  
+config IRINGBUF
+  depends on TRACE
+  bool "Enable ringbuf tracer"
+  default n
+  
 config MTRACE
   depends on TRACE
   bool "Enable memory tracer"

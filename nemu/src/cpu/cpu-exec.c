@@ -19,7 +19,7 @@
 #include <locale.h>
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/expr.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/watchpoint.h"
-#include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/iringbuf.h"
+#include "/home/cll/ysyx/ysyx-workbench/nemu/src/utils/iringbuf.h"
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -67,54 +67,57 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 
 
 static void exec_once(Decode *s, vaddr_t pc) {
-  s->pc = pc;
-  s->snpc = pc;
-  isa_exec_once(s);
-  cpu.pc = s->dnpc;
+	s->pc = pc;
+	s->snpc = pc;
+	isa_exec_once(s);
+	cpu.pc = s->dnpc;
 #ifdef CONFIG_ITRACE
-  char *p = s->logbuf;
-  p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
-  int ilen = s->snpc - s->pc;
-  int i;
-  uint8_t *inst = (uint8_t *)&s->isa.inst.val;
-  for (i = ilen - 1; i >= 0; i --) {
-    p += snprintf(p, 4, " %02x", inst[i]);
-  }
-  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
-  int space_len = ilen_max - ilen;
-  if (space_len < 0) space_len = 0;
-  space_len = space_len * 3 + 1;
-  memset(p, ' ', space_len);
-  p += space_len;
+	char *p = s->logbuf;
+	p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
+	int ilen = s->snpc - s->pc;
+	int i;
+	uint8_t *inst = (uint8_t *)&s->isa.inst.val;
+	for (i = ilen - 1; i >= 0; i --) {
+		p += snprintf(p, 4, " %02x", inst[i]);
+	}
+	int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
+	int space_len = ilen_max - ilen;
+	
+	if (space_len < 0) space_len = 0;
+	space_len = space_len * 3 + 1;
+	memset(p, ' ', space_len);
+	p += space_len;
 
-#ifndef CONFIG_ISA_loongarch32r
-  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-  disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
-      MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
-#else
-  p[0] = '\0'; // the upstream llvm does not support loongarch32r
-#endif
+	#ifndef CONFIG_ISA_loongarch32r
+		void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+		disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
+		MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst.val, ilen);
+	#else
+		p[0] = '\0'; // the upstream llvm does not support loongarch32r
+	#endif
+	
 #endif
 }
 
 static void execute(uint64_t n) {
-  Decode s;
-  for (;n > 0; n --) {
-    exec_once(&s, cpu.pc);
-    g_nr_guest_inst ++;
-    trace_and_difftest(&s, cpu.pc);
-    if (nemu_state.state != NEMU_RUNNING) break;
-    IFDEF(CONFIG_DEVICE, device_update());
-  }
+	Decode s;
+	for (;n > 0; n --) {
+		exec_once(&s, cpu.pc);
+		g_nr_guest_inst ++;
+		trace_and_difftest(&s, cpu.pc);
+		if (nemu_state.state != NEMU_RUNNING) break;
+			IFDEF(CONFIG_DEVICE, device_update());
+	}
 }
 
 static void statistic() {
-  IFNDEF(CONFIG_TARGET_AM, setlocale(LC_NUMERIC, ""));
-#define NUMBERIC_FMT MUXDEF(CONFIG_TARGET_AM, "%", "%'") PRIu64
-  Log("host time spent = " NUMBERIC_FMT " us", g_timer);
-  Log("total guest instructions = " NUMBERIC_FMT, g_nr_guest_inst);
-  if (g_timer > 0) Log("simulation frequency = " NUMBERIC_FMT " inst/s", g_nr_guest_inst * 1000000 / g_timer);
-  else Log("Finish running in less than 1 us and can not calculate the simulation frequency");
+	IFNDEF(CONFIG_TARGET_AM, setlocale(LC_NUMERIC, ""));
+	#define NUMBERIC_FMT MUXDEF(CONFIG_TARGET_AM, "%", "%'") PRIu64
+	Log("host time spent = " NUMBERIC_FMT " us", g_timer);
+	Log("total guest instructions = " NUMBERIC_FMT, g_nr_guest_inst);
+	
+	if (g_timer > 0) Log("simulation frequency = " NUMBERIC_FMT " inst/s", g_nr_guest_inst * 1000000 / g_timer);
+	else Log("Finish running in less than 1 us and can not calculate the simulation frequency");
 }
 
 void assert_fail_msg() {
@@ -153,16 +156,21 @@ void cpu_exec(uint64_t n) {
 		Log("nemu: %s at pc = " FMT_WORD,
 		ANSI_FMT("ABORT", ANSI_FG_RED),
 		nemu_state.halt_pc);
+		#ifdef CONFIG_IRINGBUF
 		display_inst();  
+		#endif
+
 		break;
 
-		/*case NEMU_END: case NEMU_ABORT:
+		/*
+		case NEMU_END: case NEMU_ABORT:
 			Log("nemu: %s at pc = " FMT_WORD,
 			(nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
 			(nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
 			ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
 			nemu_state.halt_pc);\
-			display_inst();*/
+			display_inst();
+		*/
 			
 		case NEMU_QUIT: statistic();
 	}
