@@ -44,7 +44,6 @@ static void itoa(int num, char *str) {
     }
 }
 
-
 static int format_output(char *out, size_t out_size, const char *fmt, va_list ap) {
     char *ptr = out; 
     size_t remaining = out_size - 1; // 保留一个字符给 '\0'
@@ -64,12 +63,9 @@ static int format_output(char *out, size_t out_size, const char *fmt, va_list ap
             else if (*fmt == 'u') { // 处理无符号整数
                 unsigned int num = va_arg(ap, unsigned int);
                 char buffer[32];
-                // 实现无符号整数转换
-                // 例如：itoa_unsigned(num, buffer);
-                unsigned int temp = num; // 临时变量用于处理
+                unsigned int temp = num; 
                 int index = 0;
                 
-                // 处理 0 的特殊情况
                 if (temp == 0) {
                     buffer[index++] = '0';
                 } else {
@@ -78,13 +74,12 @@ static int format_output(char *out, size_t out_size, const char *fmt, va_list ap
                         temp /= 10;
                     }
                 }
-                // 反转字符串
                 for (int i = 0; i < index / 2; i++) {
                     char tmp = buffer[i];
                     buffer[i] = buffer[index - 1 - i];
                     buffer[index - 1 - i] = tmp;
                 }
-                buffer[index] = '\0'; // 添加字符串结束符
+                buffer[index] = '\0'; 
                 
                 for (char *buf_ptr = buffer; *buf_ptr != '\0' && remaining > 0; ++buf_ptr) {
                     *ptr++ = *buf_ptr; 
@@ -106,41 +101,12 @@ static int format_output(char *out, size_t out_size, const char *fmt, va_list ap
                     }
                 }
 
-                // 反转字符串
                 for (int i = 0; i < index / 2; i++) {
                     char tmp = buffer[i];
                     buffer[i] = buffer[index - 1 - i];
                     buffer[index - 1 - i] = tmp;
                 }
-                buffer[index] = '\0'; // 添加字符串结束符
-
-                for (char *buf_ptr = buffer; *buf_ptr != '\0' && remaining > 0; ++buf_ptr) {
-                    *ptr++ = *buf_ptr; 
-                    remaining--;
-                }
-            }
-            else if (*fmt == 'X') { // 处理大写十六进制
-                unsigned int num = va_arg(ap, unsigned int);
-                char buffer[32];
-                int index = 0;
-
-                if (num == 0) {
-                    buffer[index++] = '0';
-                } else {
-                    while (num > 0) {
-                        int digit = num % 16;
-                        buffer[index++] = (digit < 10) ? (digit + '0') : (digit - 10 + 'A');
-                        num /= 16;
-                    }
-                }
-
-                // 反转字符串
-                for (int i = 0; i < index / 2; i++) {
-                    char tmp = buffer[i];
-                    buffer[i] = buffer[index - 1 - i];
-                    buffer[index - 1 - i] = tmp;
-                }
-                buffer[index] = '\0'; // 添加字符串结束符
+                buffer[index] = '\0'; 
 
                 for (char *buf_ptr = buffer; *buf_ptr != '\0' && remaining > 0; ++buf_ptr) {
                     *ptr++ = *buf_ptr; 
@@ -161,6 +127,13 @@ static int format_output(char *out, size_t out_size, const char *fmt, va_list ap
                     remaining--;
                 }
             }
+            else if (*fmt == '%') { // 处理百分号
+                if (remaining > 0) {
+                    *ptr++ = '%';
+                    remaining--;
+                }
+            }
+
         } else { 
             if (remaining > 0) {
                 *ptr++ = *fmt; 
@@ -169,6 +142,7 @@ static int format_output(char *out, size_t out_size, const char *fmt, va_list ap
         }
         fmt++; 
     }
+
     *ptr = '\0'; 
     return ptr - out; 
 }

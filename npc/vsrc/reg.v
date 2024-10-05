@@ -1,15 +1,14 @@
-module lfsr (
-    input wire clk,                  
-    output reg [7:0] lfsr
+// 触发器模板
+module ysyx_24090005_reg #(WIDTH = 1, RESET_VAL = 0) (
+	input clk,
+	input rst,
+	input [WIDTH-1:0] din,
+	output reg [WIDTH-1:0] dout,
+	input wen
 );
-
-    always @ (posedge clk) begin 
-        if (lfsr == 8'b00000000) begin
-            lfsr <= 8'b00000001;  
-        end 
-        else begin
-            lfsr <= {lfsr[0] ^ lfsr[2] ^ lfsr[3] ^ lfsr[4], lfsr[7:1]}; 
-        end 
-    end
+	always @(posedge clk) begin
+		if (rst) dout <= RESET_VAL;
+		else if (wen) dout <= din;
+	end
 endmodule
 

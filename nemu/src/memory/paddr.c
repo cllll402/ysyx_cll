@@ -17,6 +17,7 @@
 #include <memory/paddr.h>
 #include <device/mmio.h>
 #include <isa.h>
+#include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/mtrace.h"
 
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
@@ -48,20 +49,6 @@ void init_mem() {
 #endif
   IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
   Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
-}
-
-void read_mtrace(paddr_t addr, int len) {
-	FILE *file = fopen("mtrace_output.log", "a");  
-    fprintf(file, "Paddr_read  at  " FMT_PADDR "  len=%d\n", addr, len);
-    fclose(file);
-    printf("Paddr_read  at  " FMT_PADDR "  len=%d\n", addr, len);
-}
-
-void write_mtrace(paddr_t addr, int len, word_t data) {
-    FILE *file = fopen("mtrace_output.log", "a");  
-    fprintf(file, "Paddr_write at  " FMT_PADDR "  len=%d  data=" FMT_WORD "\n", addr, len, data);
-    fclose(file);
-	printf("\033[31mPaddr_write at  " FMT_PADDR "  len=%d  data=\033[31m" FMT_WORD "\033[0m\n", addr, len, data);
 }
 
 word_t paddr_read(paddr_t addr, int len) {

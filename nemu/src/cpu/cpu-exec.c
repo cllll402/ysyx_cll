@@ -19,7 +19,7 @@
 #include <locale.h>
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/expr.h"
 #include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/watchpoint.h"
-#include "/home/cll/ysyx/ysyx-workbench/nemu/src/utils/iringbuf.h"
+#include "/home/cll/ysyx/ysyx-workbench/nemu/src/monitor/sdb/iringbuf.h"
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
