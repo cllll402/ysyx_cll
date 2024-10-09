@@ -15,13 +15,15 @@ Area heap = RANGE(&_heap_start, PMEM_END);
 static const char mainargs[] = MAINARGS;
 
 void putch(char ch) {
+
 }
 
 void halt(int code) {
-  while (1);
+	asm volatile("mv a0, %0; ebreak" : :"r"(code));
+	while (1);
 }
 
 void _trm_init() {
-  int ret = main(mainargs);
-  halt(ret);
+	int ret = main(mainargs);
+	halt(ret);
 }

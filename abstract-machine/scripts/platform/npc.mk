@@ -6,17 +6,19 @@ AM_SRCS := riscv/npc/start.S \
            riscv/npc/cte.c \
            riscv/npc/trap.S \
            platform/dummy/vme.c \
-           platform/dummy/mpe.c
+           platform/dummy/mpe.c 
 
 CFLAGS    += -fdata-sections -ffunction-sections
 LDFLAGS   += -T $(AM_HOME)/scripts/linker.ld \
-						 --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
+             --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
 LDFLAGS   += --gc-sections -e _start
-CFLAGS += -DMAINARGS=\"$(mainargs)\"
+CFLAGS    += -DMAINARGS=\"$(mainargs)\"
 
-NPCFLAGS += -l $(shell dirname $(IMAGE).bin)/npc_log.txt
-NPCFLAGS += -e $(IMAGE).elf
-NPCFLAGS += -b
+NPCFLAGS  += -l /home/cll/ysyx/ysyx-workbench/am-kernels/tests/cpu-tests/npc_log.txt
+#NPCFLAGS += -e $(IMAGE).elf
+#NPCFLAGS += -b
+
+CFLAGS += -I $(NPC_HOME)/csrc/include
 
 .PHONY: $(AM_HOME)/am/src/riscv/npc/trm.c
 
@@ -26,9 +28,5 @@ image: $(IMAGE).elf
 	@$(OBJCOPY) -S --set-section-flags .bss=alloc,contents -O binary $(IMAGE).elf $(IMAGE).bin
 
 run: image
-	make -C $(NPC_HOME) run IMG=$(IMAGE).bin
-	
-	#run: image
-	#$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin
-
+	make -C $(NPC_HOME) run ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin
 
