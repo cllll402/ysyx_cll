@@ -2,13 +2,13 @@ TOP_NAME = ysyx_24090005_top
 
 BUILD_DIR = /home/cll/ysyx/ysyx-workbench/npc/obj_dir
 YOSYS_DIR = /home/cll/ysyx/ysyx-workbench/npc/yosys
-INCLUDE_DIR = /home/cll/ysyx/ysyx-workbench/npc/csrc/include
+INCLUDE_DIR = /home/cll/ysyx/ysyx-workbench/npc/csrc/include/
 
 BIN = $(BUILD_DIR)/$(TOP_NAME)
 
 VERILATOR = verilator
 VERILATOR_CFLAGS = -MMD --build -cc -O3 --x-assign fast --x-initial fast --noassert --exe --trace --top-module $(TOP_NAME) 
-VERILATOR_CFLAGS += -I$(INCLUDE_DIR) 
+VERILATOR_CFLAGS += -I$(INCLUDE_DIR)
 
 YOSYS_SRC = /home/cll/ysyx/ysyx-workbench/npc/vsrc/top.v
 VSRCS = $(shell find $(abspath /home/cll/ysyx/ysyx-workbench/npc/vsrc) -name "*.v")
@@ -21,7 +21,7 @@ yosys:
 sim: $(VSRCS) $(CSRCS)
 	@rm -rf $(BUILD_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) $(VSRCS) $(CSRCS) -o $(abspath $(BIN))
-	
+
 run: sim
 	$(BIN) $(IMG)
 
