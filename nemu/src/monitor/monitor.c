@@ -104,8 +104,6 @@ static int parse_args(int argc, char *argv[]) {
 }
 
 void init_monitor(int argc, char *argv[]) {
-	/* Perform some global initialization. */
-
 	/* Parse arguments. */
 	parse_args(argc, argv);
 
@@ -154,6 +152,8 @@ void init_monitor(int argc, char *argv[]) {
 	/* Display welcome message. */
 	welcome();
 }
+
+
 #else // CONFIG_TARGET_AM
 static long load_img() {
 	extern char bin_start, bin_end;
