@@ -12,8 +12,9 @@ YOSRC = /home/cll/ysyx/ysyx-workbench/npc/vsrc/top.v
 VSRCS = $(shell find /home/cll/ysyx/ysyx-workbench/npc/vsrc -name "*.v")
 CSRCS = $(shell find /home/cll/ysyx/ysyx-workbench/npc/csrc -name "*.c" -o -name "*.cc" -o -name "*.cpp")
 
+#NPCFLAGS += -d $(NPC_HOME)/riscv32-nemu-interpreter-so
 #NPCFLAGS += -l ./npc_log.txt
-NPCFLAGS += -e $(ELF)
+#NPCFLAGS += -e $(ELF)
 #NPCFLAGS += -b
 
 BIN = $(BUILD_DIR)/$(TOP_NAME)
@@ -31,7 +32,7 @@ run: sim
 	$(BIN) $(NPCFLAGS) $(IMG) 
 
 clean:
-	rm -rf $(BUILD_DIR) $(YOSYS_DIR) npc_log.txt
+	rm -rf $(BUILD_DIR) $(YOSYS_DIR) npc_log.txt mtrace_output.log
 
 .PHONY: sim run yosys clean
 
